@@ -1,0 +1,17 @@
+[package]
+name = "aita"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "3.0.4"
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1.14.0", features = ["full"] }
+serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.73"
+anyhow = "1.0"
+regex = "1.5.4"
+hyper = "0.14"
+bytes = "1.1"
