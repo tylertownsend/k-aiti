@@ -1,6 +1,9 @@
 [package]
 name = "aita"
 version = "0.1.0"
+authors = ["Tyler Townsend"]
+license = "MIT"
+description = "Experimental CLI for working with an intelligent terminal assitant"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -15,3 +18,10 @@ anyhow = "1.0"
 regex = "1.5.4"
 hyper = "0.14"
 bytes = "1.1"
+
+[package.metadata.deb]
+# Package metadata for the Debian package
+maintainer = "Tyler Townsend"
+section = "utils"
+priority = "optional"
+depends = "libc6 (>= 2.27), libssl1.1 (>= 1.1.1)"
