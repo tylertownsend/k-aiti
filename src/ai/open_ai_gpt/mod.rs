@@ -109,22 +109,14 @@ impl GptClient {
 
         // Clone the bytes
         let response_bytes_clone = response_bytes.clone();
-        // debug
-        // if true {
-            // Get the response body as Bytes
-            // let response_text = String::from_utf8_lossy(&response_bytes);
-            // Print the raw response
-            //println!("OpenAI API raw response: {}", response_text);
-        // }
 
+        // debug
         // Deserialize the response into a GptResponse struct using the cloned bytes
         let data: Result<GptResponse, serde_json::Error> = serde_json::from_slice(&response_bytes_clone);
         match data.as_ref() {
             Ok(d) =>  println!("Parsed GptResponse: {:?}", d),
             Err(e) => eprintln!("Error: {}", e)
         }
-        // // Print the parsed GptResponse struct
-        
 
         if let Some(choice) = data.unwrap().choices.first() {
             let response_text = choice.text.clone();
