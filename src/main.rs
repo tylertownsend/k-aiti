@@ -1,6 +1,9 @@
-use aita::ai::open_ai_gpt::{GptClient, GptRequest};
+use aita::ai::open_ai_gpt::{GptClient, GptRequest, ClientRequest};
 use clap::{App, Arg, SubCommand};
 use std::env;
+use std::io::{self, Write};
+use std::fs::File;
+use std::path::Path;
 
 #[tokio::main]
 async fn main() {
@@ -31,13 +34,14 @@ async fn main() {
                         .takes_value(true),
                 ),
         )
+        .subcommand(SubCommand::with_name("chat").about("Enter chat mode with the GPT API"))
         .get_matches();
 
     let mut gpt_client = GptClient::new(api_key);
 
     if let Some(search_matches) = matches.subcommand_matches("search") {
         if let Some(query) = search_matches.value_of("query") {
-            let request = GptRequest {
+            let request = ClientRequest {
                 prompt: query.to_string(),
                 max_tokens: 100,
                 n: 1,
@@ -54,7 +58,7 @@ async fn main() {
         }
     } else if let Some(debug_matches) = matches.subcommand_matches("debug") {
         if let Some(error_message) = debug_matches.value_of("error") {
-            let request = GptRequest {
+            let request = ClientRequest {
                 prompt: format!("How to fix the following error in code: {}", error_message),
                 max_tokens: 100,
                 n: 1,
@@ -72,5 +76,49 @@ async fn main() {
             // Terminal capture code here
             println!("Terminal capture not implemented yet");
         }
+    } else if let Some(_) = matches.subcommand_matches("chat") {
+        let chat_history_path = "chat_history.txt";
+
+        let mut chat_history = if Path::new(chat_history_path).exists() {
+            let content = std::fs::read_to_string(chat_history_path).expect("Failed to read chat history");
+            content.lines().map(|line| line.to_string()).collect()
+        } else {
+            Vec::new()
+        };
+
+        loop {
+            print!("You: ");
+            io::stdout().flush().unwrap();
+            let mut input = String::new();
+            io::stdin().read_line(&mut input).unwrap();
+            input = input.trim().to_string();
+
+            if input.to_lowercase() == "chat::quit" {
+                break;
+            }
+
+            let request = ClientRequest {
+                prompt: input.clone(),
+                max_tokens: 100,
+                n: 1,
+                temperature: 0.8,
+                model: String::from("text-davinci-003"),
+                chat_log: Some(chat_history.clone()), // Update this line
+                stop: Some(String::from("##End chat##")),
+            };
+            match gpt_client.generate_response(request).await {
+                Ok(response) => {
+                    let output = format!("GPT: {}", response.as_str());
+                    println!("{}", output);
+                    chat_history.push(format!("You: {}", input));
+                    chat_history.push(output);
+                }
+                Err(e) => eprintln!("Error: {}", e),
+            }
+        }
+
+        File::create(chat_history_path)
+            .and_then(|mut file| file.write_all(chat_history.join("##End chat##").as_bytes()))
+            .expect("Failed to save chat history");
     }
 }
