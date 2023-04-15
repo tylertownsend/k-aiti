@@ -99,7 +99,7 @@ async fn main() {
 
             let request = ClientRequest {
                 prompt: input.clone(),
-                max_tokens: 100,
+                max_tokens: 1000,
                 n: 1,
                 temperature: 0.8,
                 model: String::from("text-davinci-003"),
