@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 const OPENAI_API_URL_COMPLETIONS: & str = "https://api.openai.com/v1/completions";
+pub const STOP_PHRASE: &str = "##End chat##";
 
 #[derive(Serialize)]
 pub struct GptRequest {
@@ -79,8 +80,8 @@ impl GptClient {
         // Update the generate_response method in the GptClient implementation
 
         let prompt = if let Some(chat_log) = &client_request.chat_log {
-            let history = chat_log.join("##End chat##");
-            format!("{}##End chat##\nYou: {}", history.trim(), client_request.prompt)
+            let history = chat_log.join(STOP_PHRASE);
+            format!("{}\nYou: {}", history.trim(), client_request.prompt)
         } else {
             client_request.prompt
         };
@@ -117,12 +118,15 @@ impl GptClient {
         // }
 
         // Deserialize the response into a GptResponse struct using the cloned bytes
-        let data: GptResponse = serde_json::from_slice(&response_bytes_clone)?;
-
+        let data: Result<GptResponse, serde_json::Error> = serde_json::from_slice(&response_bytes_clone);
+        match data.as_ref() {
+            Ok(d) =>  println!("Parsed GptResponse: {:?}", d),
+            Err(e) => eprintln!("Error: {}", e)
+        }
         // // Print the parsed GptResponse struct
-        // println!("Parsed GptResponse: {:?}", data);
+        
 
-        if let Some(choice) = data.choices.first() {
+        if let Some(choice) = data.unwrap().choices.first() {
             let response_text = choice.text.clone();
             // self.chat_log.push(response_text.clone());
             // if let Some(stop_phrase) = &request.stop {
