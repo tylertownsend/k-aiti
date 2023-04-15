@@ -1,0 +1,45 @@
+You: This is a test. I want to know how to reverse a string in c++.##End chat##GPT: ##End chat####End chat##Answer: You can reverse a string in C++ by using the reverse() method from the <algorithm> library. To use this method, you must include the library at the top of your code. For example, to reverse the string "Hello World", you would use the following code: ##End chat####End chat###include <algorithm> ##End chat###include <string> ##End chat####End chat##int main() ##End chat##{ ##End chat##    std::string str = "Hello World"; 
+
+I have this GptClient
+
+impl GptClient {
+
+    pub async fn generate_response(
+        &mut self,
+        client_request: ClientRequest,
+    ) -> Result<ChatCompletionResponseStream, OpenAIError>  {...}
+}
+
+I want to write a ChatClient that has a trait called render_response. This will use the generate_response function to create a stream and will render screen to text in a terminal.
+
+The response can be generated with the following code:
+
+ let mut lock = stdout().lock();
+    while let Some(result) = stream.next().await {
+        match result {
+            Ok(response) => {
+                response.choices.iter().for_each(|chat_choice| {
+                    if let Some(ref content) = chat_choice.delta.content {
+                        write!(lock, "{}", content).unwrap();
+                    }
+                });
+            }
+            Err(err) => {
+                writeln!(lock, "error: {err}").unwrap();
+            }
+        }
+        stdout().flush()?;
+    }
+
+Implement chat Client to write the stream to the terminal screen.  The ClientRequest loooks like
+
+pub struct ClientRequest {
+    pub prompt: String,
+    pub chat_log: Option<Vec<ChatCompletionRequestMessageArgs>>,
+}
+
+
+where prompt is the user prompt and chat_log is the history.
+
+
+We want to return the entire response as a string so we can add to chat_log in the caller.
