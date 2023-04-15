@@ -10,8 +10,7 @@
       "name": "Debug aita",
       "program": "${workspaceFolder}/target/debug/aita",
       "args": [
-        "search",
-        "When is tom cruise's birthday"
+        "chat",
       ],
       "cwd": "${workspaceFolder}"
     }
