@@ -1,4 +1,4 @@
-use aita::ai::open_ai_gpt::{GptClient, GptRequest, ClientRequest};
+use aita::ai::open_ai_gpt::{GptClient, ClientRequest, STOP_PHRASE};
 use clap::{App, Arg, SubCommand};
 use std::env;
 use std::io::{self, Write};
@@ -104,11 +104,11 @@ async fn main() {
                 temperature: 0.8,
                 model: String::from("text-davinci-003"),
                 chat_log: Some(chat_history.clone()), // Update this line
-                stop: Some(String::from("##End chat##")),
+                stop: Some(String::from(STOP_PHRASE)),
             };
             match gpt_client.generate_response(request).await {
                 Ok(response) => {
-                    let output = format!("GPT: {}", response.as_str());
+                    let output = format!("GPT: {}", response);
                     println!("{}", output);
                     chat_history.push(format!("You: {}", input));
                     chat_history.push(output);
@@ -118,7 +118,7 @@ async fn main() {
         }
 
         File::create(chat_history_path)
-            .and_then(|mut file| file.write_all(chat_history.join("##End chat##").as_bytes()))
+            .and_then(|mut file| file.write_all(chat_history.join(STOP_PHRASE).as_bytes()))
             .expect("Failed to save chat history");
     }
 }
