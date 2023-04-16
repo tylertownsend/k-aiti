@@ -30,30 +30,24 @@ pub struct GptClientRequest {
 #[derive(Clone)]
 pub struct GptClient {
     client: Client,
-    api_key: String,
     max_tokens: u16,
     n: u8,
     temperature: f32,
     model: String,
-    stop: Option<String>,
 }
 
 impl GptClient {
-    pub fn new(api_key: String,
-               max_tokens: u16,
+    pub fn new(max_tokens: u16,
                n: u8,
                temperature: f32,
-               model: String,
-               stop: Option<String>) -> Self {
+               model: String) -> Self {
         let client = Client::new();
         GptClient {
             client,
-            api_key,
             max_tokens,
             n,
             temperature,
             model,
-            stop,
         }
     }
 
