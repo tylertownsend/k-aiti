@@ -6,7 +6,7 @@ use std::io::{self, Write};
 
 #[tokio::main]
 async fn main() {
-    let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
+    // let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
     let matches = App::new("aita")
         .version("0.1.0")
         .author("Tyler Townsend")
@@ -36,6 +36,6 @@ async fn main() {
         .subcommand(SubCommand::with_name("chat").about("Enter chat mode with the GPT API"))
         .get_matches();
 
-    let gpt_client = GptClient::new( 1000, 1, 0.8, String::from("gpt-3.5-turbo"));
+    let gpt_client = GptClient::new(1000, 1, 0.8, String::from("gpt-3.5-turbo"));
     execution::process_command(matches, gpt_client).await
 }

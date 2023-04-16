@@ -7,10 +7,20 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug aita",
+      "name": "Debug aita chat",
       "program": "${workspaceFolder}/target/debug/aita",
       "args": [
         "chat",
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug aita terminal capture",
+      "program": "${workspaceFolder}/target/debug/aita",
+      "args": [
+        "debug",
       ],
       "cwd": "${workspaceFolder}"
     }

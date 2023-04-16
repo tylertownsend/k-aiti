@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use async_openai::error::OpenAIError;
-use async_openai::types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, ChatCompletionResponseStream, Role, ChatCompletionRequestMessage};
+use async_openai::types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, ChatCompletionResponseStream, Role, ChatCompletionRequestMessage, ChatCompletionResponseMessage};
 // use serde::{Deserialize, Serialize};
 use async_openai::Client;
 // use futures::{StreamExt, Stream};
@@ -65,7 +65,19 @@ impl GptClient {
             .build()?)
     }
 
-    pub async fn generate_response(
+    pub async fn generate_response(&mut self, client_request: &GptClientRequest) -> Result<ChatCompletionResponseMessage, OpenAIError> {
+        let request = CreateChatCompletionRequestArgs::default()
+            .model(self.model.to_string())
+            .n(self.n)
+            .max_tokens(self.max_tokens)
+            .temperature(self.temperature)
+            // .n(value)
+            .messages(client_request.messages.clone())
+            .build()?;
+        Ok(self.client.chat().create(request).await?.choices[0].clone().message)
+    }
+
+    pub async fn generate_response_stream(
         &mut self,
         client_request: &GptClientRequest,
     ) -> Result<ChatCompletionResponseStream, OpenAIError> {
