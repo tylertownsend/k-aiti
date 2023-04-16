@@ -1,1 +1,1 @@
-pub mod chat_mode;
+pub mod terminal_renderer;
