@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use async_openai::error::OpenAIError;
 use async_openai::types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, ChatCompletionResponseStream, Role, ChatCompletionRequestMessage};
 // use serde::{Deserialize, Serialize};
@@ -21,11 +23,11 @@ pub const STOP_PHRASE: &str = "##End chat##";
 // }
 
 #[derive(Clone)]
-pub struct ClientRequest {
-    pub prompt: String,
-    pub chat_log: Option<Vec<ChatCompletionRequestMessage>>,
+pub struct GptClientRequest {
+    pub messages: Vec<ChatCompletionRequestMessage>,
 }
 
+#[derive(Clone)]
 pub struct GptClient {
     client: Client,
     api_key: String,
@@ -35,6 +37,7 @@ pub struct GptClient {
     model: String,
     stop: Option<String>,
 }
+
 impl GptClient {
     pub fn new(api_key: String,
                max_tokens: u16,
@@ -50,20 +53,29 @@ impl GptClient {
             n,
             temperature,
             model,
-            stop
+            stop,
         }
+    }
+
+    pub fn create_user_message(self, prompt: String) -> Result<ChatCompletionRequestMessage, Box<dyn Error>> {
+        Ok(ChatCompletionRequestMessageArgs::default()
+            .content(prompt.to_string())
+            .role(Role::User)
+            .build()?)
+    }
+
+    pub fn create_assistant_message(self, prompt: String) -> Result<ChatCompletionRequestMessage, Box<dyn Error>> {
+        Ok(ChatCompletionRequestMessageArgs::default()
+            .content(prompt.to_string())
+            .role(Role::User)
+            .build()?)
     }
 
     pub async fn generate_response(
         &mut self,
-        client_request: &ClientRequest,
+        client_request: &GptClientRequest,
     ) -> Result<ChatCompletionResponseStream, OpenAIError> {
         // Update the generate_response method in the GptClient implementation
-
-        let messages = [ChatCompletionRequestMessageArgs::default()
-            .content(client_request.prompt.to_string())
-            .role(Role::User)
-            .build()?];
 
         let request = CreateChatCompletionRequestArgs::default()
             .model(self.model.to_string())
@@ -71,7 +83,7 @@ impl GptClient {
             .max_tokens(self.max_tokens)
             .temperature(self.temperature)
             // .n(value)
-            .messages(messages)
+            .messages(client_request.messages.clone())
             .build()?;
         // };
 

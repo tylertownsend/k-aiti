@@ -1,7 +1,7 @@
 use std::{io::{self, Write, }, error::Error};
 use async_openai::types::{Role, ChatCompletionRequestMessageArgs, ChatCompletionRequestMessage };
 
-use crate::ai::{open_ai_gpt::{GptClient, ClientRequest}, ChatClient};
+use crate::ai::{open_ai_gpt::{GptClient, GptClientRequest}, ChatClient};
 
 pub async fn run_chat_mode(gpt_client: GptClient) -> Result<(), Box<dyn Error>> {
     let mut chat_client = ChatClient::new(gpt_client);
@@ -22,24 +22,16 @@ pub async fn run_chat_mode(gpt_client: GptClient) -> Result<(), Box<dyn Error>> 
             break;
         }
 
-        let client_request = ClientRequest {
-            prompt: input.trim().to_string(),
-            chat_log: Some(chat_log.clone()),
-        };
 
-        let response = chat_client.render_response(&client_request).await?;
+        let response = chat_client.render_response(input).await?;
 
-        let response_message = ChatCompletionRequestMessageArgs::default()
-            .content(response)
-            .role(Role::Assistant)
-            .build()?;
-        chat_log.push(response_message);
 
-        let user_message = ChatCompletionRequestMessageArgs::default()
-            .content(input.to_string())
-            .role(Role::User)
-            .build()?;
-        chat_log.push(user_message);
+        // User should be added via render_response
+        // let user_message = ChatCompletionRequestMessageArgs::default()
+        //     .content(input.to_string())
+        //     .role(Role::User)
+        //     .build()?;
+        // chat_log.push(user_message);
 
         // prompt.clear();
     }
