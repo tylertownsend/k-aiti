@@ -1,4 +1,4 @@
-use aita::ai::open_ai_gpt::{GptClient, ClientRequest, STOP_PHRASE};
+use aita::ai::open_ai_gpt::{GptClient, STOP_PHRASE};
 use aita::render::chat_mode::{self, run_chat_mode};
 use clap::{App, Arg, SubCommand};
 use std::env;
@@ -42,10 +42,10 @@ async fn main() {
 
     if let Some(search_matches) = matches.subcommand_matches("search") {
         if let Some(query) = search_matches.value_of("query") {
-            let request = ClientRequest {
-                prompt: query.to_string(),
-                chat_log: None, // No chat log needed for search
-            };
+            // let request = ClientRequest {
+            //     prompt: query.to_string(),
+            //     chat_log: None, // No chat log needed for search
+            // };
     
             // match gpt_client.generate_response(request).await {
             //     Ok(response) => println!("GPT response: {}", response),
@@ -54,10 +54,10 @@ async fn main() {
         }
     } else if let Some(debug_matches) = matches.subcommand_matches("debug") {
         if let Some(error_message) = debug_matches.value_of("error") {
-            let request = ClientRequest {
-                prompt: format!("How to fix the following error in code: {}", error_message),
-                chat_log: None, // No chat log needed for debug
-            };
+            // let request = ClientRequest {
+            //     prompt: format!("How to fix the following error in code: {}", error_message),
+            //     chat_log: None, // No chat log needed for debug
+            // };
     
             // match gpt_client.generate_response(request).await {
             //     Ok(response) => println!("GPT response: {}", response),
