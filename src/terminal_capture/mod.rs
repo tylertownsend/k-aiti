@@ -7,17 +7,11 @@ pub mod unix;
 pub mod windows;
 
 #[cfg(target_family = "unix")]
-pub use unix::UnixTerminalCapture;
+pub use unix::UnixTerminalCapture as TerminalCaptureInstance;
 
 #[cfg(target_family = "windows")]
-pub use windows::WindowsTerminalCapture;
+pub use windows::WindowsTerminalCapture as TerminalCaptureInstance;
 
-pub fn capture_instance() -> Box<dyn TerminalCapture> {
-    if cfg!(target_family = "unix") {
-        Box::new(UnixTerminalCapture)
-    } else if cfg!(target_family = "windows") {
-        Box::new(WindowsTerminalCapture)
-    } else {
-        panic!("Unsupported platform");
-    }
+pub fn capture_instance() -> Box<dyn traits::TerminalCapture> {
+    Box::new(TerminalCaptureInstance)
 }
