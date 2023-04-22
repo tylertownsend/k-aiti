@@ -41,7 +41,8 @@ pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
     } else if let Some(_) = matches.subcommand_matches("config") {
         let mut config = match config_menu::read_user_settings() {
             Ok(path) => path,
-            Err(_) => {
+            Err(error) => {
+                println!("{}", error);
                 panic!("Could not find the users settings file! Abort");
             }
         };

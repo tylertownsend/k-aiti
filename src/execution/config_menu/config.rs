@@ -7,10 +7,11 @@ pub struct Application {
     pub version: String,
 }
 
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ModelConfig {
-    ChatGPT { max_tokens: u32, temperature: f64, top_p: f64 },
+    OpenAIGPT { max_tokens: u32, temperature: f64, top_p: f64 },
     // VideoGen { frame_rate: u32, resolution: String, duration: u32 },
     // ImageGen { width: u32, height: u32, num_samples: u32 },
     // AgentGPT { max_tokens: u32, temperature: f64, top_p: f64 },
@@ -26,7 +27,7 @@ pub struct Model {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Mode {
-    pub id: String,
+    pub id: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]

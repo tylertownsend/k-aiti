@@ -31,33 +31,58 @@ use super::{Model, ModelConfig};
 pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, model: &mut Model) -> Result<(), Box<dyn Error>> {
 
     match &mut model.config {
-        ModelConfig::ChatGPT { .. } => {
-            view_gpt_config(terminal, model, &mut model.config)
+        ModelConfig::OpenAIGPT { max_tokens, temperature, top_p} => {
+            let mut config = OpenAIGPT { max_tokens: *max_tokens, temperature: *temperature, top_p: *top_p };
+            let required_config = ModelRequiredConfig {id: model.id.to_string(), name: model.name.to_string()};
+            config = view_gpt_config(terminal, required_config, config)?;
+            *max_tokens = config.max_tokens;
+            *temperature = config.temperature;
+            *top_p = config.top_p;
+            Ok(())
         }
     }
 }
 
-fn view_gpt_config(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, model: &mut Model, model_config: &mut ModelConfig::ChatGPT) -> Result<(), Box<dyn Error>> {
+struct ModelRequiredConfig {
+    id: String,
+    name: String,
+}
+struct OpenAIGPT { max_tokens: u32, temperature: f64, top_p: f64 }
+
+fn view_gpt_config(
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    required_config: ModelRequiredConfig,
+    mut model_config: OpenAIGPT,
+    ) -> Result<OpenAIGPT, Box<dyn Error>> {
 
     // Model fields
-    let mut id = String::from("chat_model");
-    let mut name = String::from("ChatGPT");
-    // let mut model_path = String::from("models/chat_gpt/");
-    let mut max_tokens = String::from("200");
-    let mut temperature = String::from("0.8");
-    let mut top_p = String::from("0.9");
+    // let mut id = String::from("chat_model");
+    // let mut name = String::from("ChatGPT");
+    // // let mut model_path = String::from("models/chat_gpt/");
+    // let mut max_tokens = String::from("200");
+    // let mut temperature = String::from("0.8");
+    // let mut top_p = String::from("0.9");
 
     let mut selected_field = 0;
     let mut editing_field = false;
 
     // modify to use real json
     let mut input_widgets = [
-        &mut model.id,
-        &mut model.name,
+        &mut required_config.id.to_string(),
+        &mut required_config.name.to_string(),
         // &mut model_path,
-        &mut model_config.,
-        &mut model_config.temperature,
-        &mut model_config.top_p,
+        &mut model_config.max_tokens.to_string(),
+        &mut model_config.temperature.to_string(),
+        &mut model_config.top_p.to_string(),
+    ];
+
+    let labels = [
+        "ID",
+        "Name",
+        // "Model Path",
+        "Max Tokens",
+        "Temperature",
+        "Top P",
     ];
 
     loop {
@@ -91,14 +116,6 @@ fn view_gpt_config(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, model:
             let title_block = Block::default().title(title_span).borders(Borders::ALL);
             frame.render_widget(title_block, chunks[0]);
         
-            let labels = [
-                "ID",
-                "Name",
-                // "Model Path",
-                "Max Tokens",
-                "Temperature",
-                "Top P",
-            ];
 
             for (i, (label, input_widget)) in labels.iter().zip(input_widgets.iter_mut()).enumerate() {
                 let input_block = Block::default()
@@ -181,6 +198,18 @@ fn view_gpt_config(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, model:
             _ => {}
         }
     }
+    // let mut input_widgets = [
+    //     &mut model.id,
+    //     &mut model.name,
+    //     // &mut model_path,
+    //     &mut model_config.max_tokens.to_string(),
+    //     &mut model_config.temperature.to_string(),
+    //     &mut model_config.top_p.to_string(),
+    // ];
+    model_config.max_tokens = input_widgets[2].parse::<u32>()?;
+    model_config.temperature = input_widgets[3].parse::<f64>()?;
+    model_config.top_p =  input_widgets[4].parse::<f64>()?;
+
     terminal.clear()?;
-    Ok(())
+    Ok(model_config)
 }

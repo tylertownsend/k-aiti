@@ -75,7 +75,7 @@ pub async fn run_config_menu(config: &mut Config) -> Result<(), Box<dyn std::err
                 KeyCode::Enter => match menu_items[selected_item] {
                     MenuItem::Quit => running = false,
                     MenuItem::ViewModels => {
-                        view_models::draw_view_models(&mut terminal, &mut config)?;
+                        view_models::draw_view_models(&mut terminal, config)?;
                     }
                     // Handle other menu items here
                     _ => {}

@@ -106,8 +106,8 @@ pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c
                 KeyCode::Char('v') | KeyCode::Char('V') => {
                     // View logic
                     if let Some(selected_index) = models_list.state.selected() {
-                        if let Some(selected_model) = config.models.get(selected_index).as_mut() {
-                            view_model::view(selected_model)?;
+                        if let Some(selected_model) = config.models.get_mut(selected_index) {
+                            view_model::view(terminal, selected_model)?;
                         }
                     }
                 }
