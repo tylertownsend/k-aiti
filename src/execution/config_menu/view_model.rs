@@ -146,17 +146,26 @@ fn view_gpt_config(
             CEvent::Key(event) => match event.code {
                 KeyCode::Char('s') | KeyCode::Char('S') => {
                     if !editing_field {
+                        let confirmed = present_confirmation(terminal)?;
+                        if confirmed {
+                            model_config.max_tokens = input_widgets[2].parse::<u32>()?;
+                            model_config.temperature = input_widgets[3].parse::<f64>()?;
+                            model_config.top_p =  input_widgets[4].parse::<f64>()?;
+                        }
                     }
-                    // Save logic
                 }
                 KeyCode::Char('c') | KeyCode::Char('C') => {
                     // Cancel logic
                     if !editing_field {
+                        *input_widgets[2] = model_config.max_tokens.to_string();
+                        *input_widgets[3] = model_config.temperature.to_string();
+                        *input_widgets[4] = model_config.top_p.to_string();
                     }
                 }
                 KeyCode::Char('b') | KeyCode::Char('B') => {
                     // Go back to the previous screen
                     if !editing_field {
+                        break;
                     }
                 }
                 KeyCode::Up => {
@@ -212,4 +221,49 @@ fn view_gpt_config(
 
     terminal.clear()?;
     Ok(model_config)
+}
+
+fn present_confirmation(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<bool, Box<dyn Error>>{
+    let mut confirmed = false;
+    loop {
+        terminal.draw(|frame| {
+            let size = frame.size();
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(3),
+                    ]
+                    .as_ref(),
+                )
+                .split(size);
+
+            let text = "Save changes? [Y/N]";
+            let span = Span::styled(
+                text,
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            );
+            let block = Block::default().title(span).borders(Borders::ALL);
+            frame.render_widget(block, chunks[0]);
+        })?;
+
+        match event::read()? {
+            CEvent::Key(event) => match event.code {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    confirmed = true;
+                    break;
+                }
+                KeyCode::Char('n') | KeyCode::Char('N') => {
+                    break;
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+    terminal.clear()?;
+    Ok(confirmed)
 }

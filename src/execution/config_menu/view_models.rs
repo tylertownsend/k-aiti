@@ -111,6 +111,14 @@ pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c
                         }
                     }
                 }
+                KeyCode::Enter => {
+                    // Enter automatically view/edits the model
+                    if let Some(selected_index) = models_list.state.selected() {
+                        if let Some(selected_model) = config.models.get_mut(selected_index) {
+                            view_model::view(terminal, selected_model)?;
+                        }
+                    }
+                }
                 KeyCode::Char('a') | KeyCode::Char('A') => {
                     // Add logic
                 }

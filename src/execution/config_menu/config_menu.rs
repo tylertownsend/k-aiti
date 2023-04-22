@@ -20,8 +20,7 @@ use super::Config;
 enum MenuItem {
     SelectMode,
     ViewModels,
-    AddRemoveModels,
-    ConfigureModels,
+    // AddRemoveModels,
     Quit,
 }
 
@@ -37,8 +36,8 @@ pub async fn run_config_menu(config: &mut Config) -> Result<(), Box<dyn std::err
     let menu_items = [
         MenuItem::SelectMode,
         MenuItem::ViewModels,
-        MenuItem::AddRemoveModels,
-        MenuItem::ConfigureModels,
+        // MenuItem::AddRemoveModels,
+        // MenuItem::ConfigureModels,
         MenuItem::Quit,
     ];
 
@@ -72,6 +71,9 @@ pub async fn run_config_menu(config: &mut Config) -> Result<(), Box<dyn std::err
                         selected_item += 1;
                     }
                 }
+                KeyCode::Char('q') | KeyCode::Char('Q') => {
+                    running = false;
+                }
                 KeyCode::Enter => match menu_items[selected_item] {
                     MenuItem::Quit => running = false,
                     MenuItem::ViewModels => {
@@ -103,14 +105,14 @@ fn menu_list_widget<'a>(
             let (label, _option) = match item {
                 MenuItem::SelectMode => ("[1] Select Mode", "SelectMode"),
                 MenuItem::ViewModels => ("[2] View Models", "ViewModels"),
-                MenuItem::AddRemoveModels => (
-                    "[3] Add/Remove Models",
-                    "AddRemoveModels",
-                ),
-                MenuItem::ConfigureModels => (
-                    "[4] Configure Models",
-                    "ConfigureModels",
-                ),
+                // MenuItem::AddRemoveModels => (
+                //     "[3] Add/Remove Models",
+                //     "AddRemoveModels",
+                // ),
+                // MenuItem::ConfigureModels => (
+                //     "[4] Configure Models",
+                //     "ConfigureModels",
+                // ),
                 MenuItem::Quit => ("[Q] Quit", "Quit"),
             };
 
