@@ -12,9 +12,55 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, ListItem, List, Paragraph},
+    widgets::{Block, Borders, ListItem, List, Paragraph, ListState},
     Terminal,
 };
+
+pub struct StatefulList<T> {
+    pub state: ListState,
+    pub items: Vec<T>,
+}
+
+impl<T> StatefulList<T> {
+    pub fn new(items: Vec<T>) -> StatefulList<T> {
+        let mut list = StatefulList {
+            state:  ListState::default(),
+            items,
+        };
+
+        list.state.select(Some(0));
+        list
+    }
+
+    pub fn next(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i >= self.items.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    pub fn previous(&mut self) {
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.items.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+}
+
 
 pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
     let mut stdout = stdout();
@@ -35,20 +81,17 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
         }
     }
 
-    let mut selection = 0;
+    let choices = vec!["Yes", "No"];
+    let mut choices_list = StatefulList::new(choices.into_iter().map(ListItem::new).collect::<Vec<_>>());
     loop {
-        draw_has_account_screen(&mut terminal, &mut selection)?;
+        draw_has_account_screen(&mut terminal, &mut choices_list)?;
         match read()? {
             Event::Key(event) => match event.code {
                 KeyCode::Up => {
-                    if selection > 0 {
-                        selection -= 1;
-                    }
+                    choices_list.next();
                 }
                 KeyCode::Down => {
-                    if selection < 1 {
-                        selection += 1;
-                    }
+                    choices_list.previous();
                 }
                 KeyCode::Enter => {
                     // Proceed to the next screen based on the user's selection
@@ -97,10 +140,51 @@ pub fn draw_intro(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) ->
     Ok(())
 }
 
-// setup
 fn draw_has_account_screen(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
-    selection: &mut usize,
+    choices_list: &mut StatefulList<ListItem>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Profile Setup");
+        f.render_widget(block, size);
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(1)
+            .constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Percentage(100),
+                ]
+                .as_ref(),
+            )
+            .split(size);
+
+        let question = Paragraph::new("Do you have an OpenAI account?")
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Center)
+            .block(Block::default().title(Span::styled("Profile Setup", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))));
+        f.render_widget(question, chunks[0]);
+
+        let choices_widget = List::new(choices_list.items.clone())
+            .block(Block::default().title("Select").borders(Borders::ALL))
+            .style(Style::default().fg(Color::White))
+            .highlight_style(Style::default().bg(Color::Blue).fg(Color::White))
+            .highlight_symbol("> ");
+
+        let h_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(33), Constraint::Percentage(34), Constraint::Percentage(33)].as_ref())
+            .split(chunks[1]);
+
+        f.render_stateful_widget(choices_widget, h_chunks[1], &mut choices_list.state);
+    })?;
+
+    Ok(())
+}
+fn draw_create_enter_openai_acount_screen(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     terminal.draw(|f| {
         let size = f.size();
@@ -112,58 +196,63 @@ fn draw_has_account_screen(
             .margin(2)
             .constraints(
                 [
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Percentage(50),
+                    Constraint::Length(1),
+                    Constraint::Length(1),
+                    Constraint::Percentage(100),
                 ]
                 .as_ref(),
             )
             .split(size);
 
-        let question = Paragraph::new("Do you have an OpenAI account?")
+        let api_key_prompt = Paragraph::new("Enter your OpenAI API key:")
             .style(Style::default().fg(Color::White))
-            .alignment(Alignment::Center)
-            .block(Block::default().title(Span::styled("Profile Setup", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))));
-        f.render_widget(question, chunks[1]);
+            .alignment(Alignment::Left);
+        f.render_widget(api_key_prompt, chunks[0]);
 
-        let choices = vec!["Yes", "No"];
-        let choices_widget = menu_list_widget(&choices, selection.clone());
-        let menu_area = centered_rect(20, choices.len() as u16 + 2, size);
-        f.render_widget(choices_widget, menu_area);
+        let api_key_input = Paragraph::new("aPiKeY12345")
+            .style(Style::default().fg(Color::Yellow))
+            .alignment(Alignment::Left);
+        f.render_widget(api_key_input, chunks[1]);
+
+        let continue_widget = Paragraph::new("[Continue]")
+            .style(Style::default().fg(Color::LightGreen))
+            .alignment(Alignment::Right);
+        f.render_widget(continue_widget, chunks[2]);
     })?;
 
     Ok(())
 }
 
-fn centered_rect(width: u16, height: u16, parent: Rect) -> Rect {
-    let x = (parent.width.saturating_sub(width)) / 2;
-    let y = (parent.height.saturating_sub(height)) / 2;
-    Rect::new(x, y, width, height)
-}
+fn draw_create_openai_account_screen(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Profile Setup");
+        f.render_widget(block, size);
 
-fn menu_list_widget<'a>(
-    items: &'a [&'a str],
-    selected_item: usize,
-) -> List<'a> {
-    let menu_items: Vec<_> = items
-        .iter()
-        .enumerate()
-        .map(|(index, item)| {
-            let label = *item;
-            let style = if index == selected_item {
-                Style::default().fg(Color::LightGreen)
-            } else {
-                Style::default()
-            };
-            ListItem::new(Span::styled(label, style))
-        })
-        .collect();
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints(
+                [
+                    Constraint::Length(1),
+                    Constraint::Percentage(100),
+                ]
+                .as_ref(),
+            )
+            .split(size);
 
-    List::new(menu_items)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Choose an option"),
-        )
-        .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+        let create_account_prompt = Paragraph::new("Create an OpenAI account and obtain your API key.")
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Center);
+        f.render_widget(create_account_prompt, chunks[0]);
+
+        let open_signup_page_widget = Paragraph::new("[Open Signup Page]")
+            .style(Style::default().fg(Color::LightGreen))
+            .alignment(Alignment::Center);
+        f.render_widget(open_signup_page_widget, chunks[1]);
+    })?;
+
+    Ok(())
 }
