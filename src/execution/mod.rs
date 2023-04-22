@@ -7,7 +7,6 @@ pub mod debug_mode;
 pub mod input_provider;
 pub mod config_menu;
 
-
 pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
     if let Some(search_matches) = matches.subcommand_matches("search") {
     } else if let Some(debug_matches) = matches.subcommand_matches("debug") {
