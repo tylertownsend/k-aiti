@@ -5,6 +5,7 @@ use crate::ai::open_ai_gpt::GptClient;
 pub mod chat_mode;
 pub mod debug_mode;
 pub mod input_provider;
+pub mod config_menu;
 
 
 pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
@@ -37,6 +38,18 @@ pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
         // File::create(chat_history_path)
         //     .and_then(|mut file| file.write_all(chat_history.join(STOP_PHRASE).as_bytes()))
         //     .expect("Failed to save chat history");
-    } else {
+    } else if let Some(_) = matches.subcommand_matches("config") {
+        let mut config = match config_menu::read_user_settings() {
+            Ok(path) => path,
+            Err(_) => {
+                panic!("Could not find the users settings file! Abort");
+            }
+        };
+        match config_menu::run_config_menu(&mut config).await {
+            Ok(()) => println!("Configuration menu closed successfully"),
+            Err(e) => eprintln!("Error running configuration menu: {}", e),
+        }
+        config_menu::write_user_settings(config);
+    }else {
     }
 }

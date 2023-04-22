@@ -23,6 +23,16 @@
         "debug",
       ],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug modify configuration",
+      "program": "${workspaceFolder}/target/debug/aita",
+      "args": [
+        "config",
+      ],
+      "cwd": "${workspaceFolder}"
     }
     
   ]

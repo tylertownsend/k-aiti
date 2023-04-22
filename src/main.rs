@@ -34,6 +34,9 @@ async fn main() {
                 ),
         )
         .subcommand(SubCommand::with_name("chat").about("Enter chat mode with the GPT API"))
+        .subcommand(SubCommand::with_name("config")
+            .about("Configure your cli environment"))
+            .aliases(&["configure", "config"])
         .get_matches();
 
     let gpt_client = GptClient::new(1000, 1, 0.8, String::from("gpt-3.5-turbo"));
