@@ -28,6 +28,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "tempfile",
  "termimad",
  "termion",
  "tokio",

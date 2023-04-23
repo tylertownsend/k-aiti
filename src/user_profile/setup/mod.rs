@@ -4,17 +4,18 @@ use crossterm::{
     execute,
 };
 use tui::{
-    buffer::Buffer,
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, ListItem, List, Paragraph, ListState, StatefulWidget, Widget},
+    widgets::{Block, Borders, ListItem, List, Paragraph, ListState},
     Terminal,
 };
 use webbrowser;
 
 use std::io::stdout;
+
+use super::config::{CreatedConfig, CreatedAccount};
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 enum Screen {
@@ -75,7 +76,7 @@ impl<T> StatefulList<T> {
 }
 
 
-pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
+pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
     let mut stdout = stdout();
     execute!(stdout, Clear(ClearType::All))?;
 
@@ -280,7 +281,7 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
                     if let Event::Key(event) = read()? {
                         if event.code == KeyCode::Enter {
                             previous_screen = current_screen;
-                            current_screen = Screen::HasAccount;
+                            current_screen = Screen::Done;
                             break;
                         }
                     }
@@ -295,7 +296,18 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), Clear(ClearType::All))?;
 
-    Ok(true)
+    let created_profile = CreatedConfig {
+        user_name: "".to_string(),
+        accounts: vec![
+            CreatedAccount {
+                name: "OpenAI".to_string(),
+                env_var_name: "OPENAI_API_KEY".to_string(),
+                env_var_value: api_key_input,
+                create_env_var: true
+            }
+        ]
+    };
+    Ok(created_profile)
 }
 
 // intro
