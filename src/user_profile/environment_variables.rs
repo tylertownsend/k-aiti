@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, fs};
 use std::ffi::OsStr;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
@@ -127,17 +127,47 @@ fn update_shell(config_file: String, shell_name: String) -> Result<(), Box<dyn s
 fn update_unix_shell_rc(env_vars: &[EnvVar], config_file: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     let home_dir = env::var("HOME").map_err(|e| format!("Failed to get HOME directory: {}", e))?;
     let config_path = Path::new(&home_dir).join(config_file);
+    
+    // Read the existing content of the file
+    let mut content = String::new();
+    if config_path.exists() {
+        content = fs::read_to_string(&config_path).map_err(|e| format!("Failed to read {}: {}", config_path.display(), e))?;
+    }
+
+    // Update the content with new environment variables
+    let mut lines: Vec<String> = content.lines().map(String::from).collect();
+    for var in env_vars {
+        let export_line = format!("export {}=\"{}\"", var.name, var.value);
+        let mut found = false;
+
+        // Search for an existing variable and update it
+        for line in lines.iter_mut() {
+            if line.starts_with(&format!("export {}=", var.name)) {
+                *line = export_line.clone();
+                found = true;
+                break;
+            }
+        }
+
+        // If the variable was not found, add it
+        if !found {
+            lines.push(export_line);
+        }
+    }
+
+    // Write the updated content back to the file
     let mut config_file = OpenOptions::new()
-        .append(true)
+        .write(true)
+        .truncate(true)
         .create(true)
         .open(&config_path)
         .map_err(|e| format!("Failed to open {}: {}", config_path.display(), e))?;
-
-    writeln!(&mut config_file, "")?;
-    for var in env_vars {
-        writeln!(&mut config_file, "export {}=\"{}\"", var.name, var.value)
-            .map_err(|e| format!("Failed to write environment variable to {}: {}", config_path.display(), e))?;
+    
+    for line in lines {
+        writeln!(&mut config_file, "{}", line)
+            .map_err(|e| format!("Failed to write updated content to {}: {}", config_path.display(), e))?;
     }
+
     Ok(())
 }
 
