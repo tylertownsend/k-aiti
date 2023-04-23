@@ -3,23 +3,18 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     execute,
 };
-use std::{
-    io::{stdout, Write},
-    time::Duration, thread::current, process::Output, error::Error,
-};
 use tui::{
     buffer::Buffer,
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::Span,
     widgets::{Block, Borders, ListItem, List, Paragraph, ListState, StatefulWidget, Widget},
     Terminal,
 };
-
 use webbrowser;
 
-use std::collections::HashMap;
+use std::io::stdout;
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 enum Screen {
@@ -27,59 +22,12 @@ enum Screen {
     HasAccount,
     AccountSetup,
     NavigateToOpenAI,
+    ProfileConfirmationPage,
+    Disclaimer,
+    CLIComplete,
     Done
 }
 
-pub struct TextInput<'a> {
-    block: Option<Block<'a>>,
-    style: Style,
-    text: &'a str,
-}
-
-impl<'a> TextInput<'a> {
-    pub fn new(text: &'a str) -> Self {
-        TextInput {
-            block: None,
-            style: Style::default(),
-            text,
-        }
-    }
-
-    pub fn block(mut self, block: Block<'a>) -> Self {
-        self.block = Some(block);
-        self
-    }
-
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
-        self
-    }
-}
-
-impl<'a> StatefulWidget for TextInput<'a> {
-    type State = &'a str;
-
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        let text = if area.width > 0 {
-            let cursor_position = self.text.chars().count();
-            let cursor_x = area.left() + cursor_position as u16;
-
-            buf.set_string(area.left(), area.top(), self.text, self.style);
-            buf.set_string(cursor_x, area.top(), "|", self.style.add_modifier(Modifier::BOLD));
-            self.text
-        } else {
-            ""
-        };
-
-        if let Some(block) = self.block {
-            let inner_area = block.inner(area);
-            buf.set_string(inner_area.left(), inner_area.top(), text, self.style);
-            block.render(area, buf);
-        } else {
-            buf.set_string(area.left(), area.top(), text, self.style);
-        }
-    }
-}
 
 pub struct StatefulList<T> {
     pub state: ListState,
@@ -137,12 +85,7 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
 
     terminal.clear()?;
 
-    let mut navigation_graph: HashMap<Screen, Vec<Screen>> = HashMap::new();
-
-    navigation_graph.insert(Screen::Intro, vec![Screen::HasAccount]);
-    navigation_graph.insert(Screen::HasAccount, vec![Screen::AccountSetup, Screen::NavigateToOpenAI]);
-    navigation_graph.insert(Screen::AccountSetup, vec![Screen::HasAccount]);
-    navigation_graph.insert(Screen::NavigateToOpenAI, vec![Screen::HasAccount, Screen::AccountSetup]);
+    let mut api_key_input = String::new();
 
     let mut previous_screen = Screen::Done;
     let mut current_screen = Screen::Intro;
@@ -202,12 +145,38 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
                     }
                 }
                 terminal.clear()?
-            }
+            }, 
+            Screen::NavigateToOpenAI => {
+                // Render no_condition screen and handle user input
+                // Update current_screen based on user input
+                create_account();
+                loop {
+                    draw_create_openai_account_screen(&mut terminal)?;
+                    match read()? {
+                        Event::Key(event) => match event.code {
+                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                                previous_screen = current_screen;
+                                current_screen = Screen::AccountSetup;
+                                break;
+                            },
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                let temp = previous_screen;
+                                previous_screen = current_screen;
+                                current_screen = temp;
+                                break;
+                            },
+                            _ => {}
+                        },
+                        _ => {}
+                        
+                    }
+                }
+                terminal.clear()?;
+            },
             Screen::AccountSetup => {
                 // Render yes_condition screen and handle user input
                 // Update current_screen based on user input
                 // Render intro screen
-                let mut api_key_input= String::new();
                 let mut editing_field: bool = false;
                 loop {
                     draw_enter_openai_acount_screen(&mut terminal, &mut api_key_input, &mut editing_field)?;
@@ -217,7 +186,7 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
                                 if !editing_field {
                                     // Proceed to the next screen
                                     previous_screen = current_screen;
-                                    current_screen = Screen::Done;
+                                    current_screen = Screen::ProfileConfirmationPage;
                                     break;
                                 } else {
                                     editing_field = true;
@@ -255,18 +224,17 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
                     }
                 }
                 terminal.clear()?;
-            }
-            Screen::NavigateToOpenAI => {
-                // Render no_condition screen and handle user input
-                // Update current_screen based on user input
-                create_account();
+            } 
+            Screen::ProfileConfirmationPage => {
+                let choices = vec!["Yes", "No"];
+                let mut choices_list = StatefulList::new(choices.clone().into_iter().map(ListItem::new).collect::<Vec<_>>());
                 loop {
-                    draw_create_openai_account_screen(&mut terminal)?;
+                    draw_profile_confirmation_screen(&mut terminal, api_key_input.as_str(), &mut choices_list)?;
                     match read()? {
                         Event::Key(event) => match event.code {
                             KeyCode::Char('c') | KeyCode::Char('C') => {
                                 previous_screen = current_screen;
-                                current_screen = Screen::AccountSetup;
+                                current_screen = Screen::Disclaimer;
                                 break;
                             },
                             KeyCode::Char('b') | KeyCode::Char('B') => {
@@ -282,15 +250,48 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
                     }
                 }
                 terminal.clear()?;
-            }
+            },
+            Screen::Disclaimer => {
+                loop {
+                    draw_disclaimer_screen(&mut terminal)?; 
+                    match read()? {
+                        Event::Key(event) => match event.code {
+                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                                previous_screen = current_screen;
+                                current_screen = Screen::CLIComplete;
+                                break;
+                            },
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                let temp = previous_screen;
+                                previous_screen = current_screen;
+                                current_screen = temp;
+                                break;
+                            },
+                            _ => {}
+                        },
+                        _ => {}
+                    }
+                }
+                terminal.clear()?;
+            },
+            Screen::CLIComplete => {
+                loop {
+                    draw_profile_setup_complete_screen(&mut terminal)?; 
+                    if let Event::Key(event) = read()? {
+                        if event.code == KeyCode::Enter {
+                            previous_screen = current_screen;
+                            current_screen = Screen::HasAccount;
+                            break;
+                        }
+                    }
+                }
+                terminal.clear()?;
+            },
             Screen::Done => {
                 break;
             }
         }
     }
-
-
-
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), Clear(ClearType::All))?;
 
@@ -473,4 +474,131 @@ fn draw_create_openai_account_screen(
 
 fn create_account() {
     webbrowser::open("https://platform.openai.com/account/api-keys").is_err();
+}
+
+fn draw_profile_confirmation_screen(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+    api_key: &str,
+    choices_list: &mut StatefulList<ListItem>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Profile Setup");
+        f.render_widget(block, size);
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints(
+                [
+                    Constraint::Length(1),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Percentage(100),
+                ]
+                .as_ref(),
+            )
+            .split(size);
+
+        let review_prompt = Paragraph::new("Review your profile information:")
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Left);
+        f.render_widget(review_prompt, chunks[0]);
+
+        let api_key_display = format!("API Key: {}", api_key);
+        let api_key_paragraph = Paragraph::new(api_key_display)
+            .style(Style::default().fg(Color::Yellow))
+            .alignment(Alignment::Left);
+        f.render_widget(api_key_paragraph, chunks[1]);
+
+        let looks_good_prompt = Paragraph::new("Looks good?")
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Left);
+        f.render_widget(looks_good_prompt, chunks[2]);
+
+        let choices_widget = List::new(choices_list.items.clone())
+            .block(Block::default().borders(Borders::NONE))
+            .style(Style::default().fg(Color::White))
+            .highlight_style(Style::default().bg(Color::DarkGray).fg(Color::White))
+            .highlight_symbol("> ");
+        f.render_stateful_widget(choices_widget, chunks[3], &mut choices_list.state);
+    })?;
+
+    Ok(())
+}
+
+fn draw_disclaimer_screen(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Profile Setup");
+        f.render_widget(block, size);
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints(
+                [
+                    Constraint::Length(5),
+                    Constraint::Percentage(100),
+                ]
+                .as_ref(),
+            )
+            .split(size);
+
+        let disclaimer_text = "Disclaimer: Always keep your API key secure \
+                               and don't share it with others. Unauthorized \
+                               usage may result in billing charges and other \
+                               consequences.";
+
+        let disclaimer_paragraph = Paragraph::new(disclaimer_text)
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Left);
+            // .wrap(Wrap { trim: true });
+        f.render_widget(disclaimer_paragraph, chunks[0]);
+
+        let continue_widget = Paragraph::new("[Continue]")
+            .style(Style::default().fg(Color::LightGreen))
+            .alignment(Alignment::Right);
+        f.render_widget(continue_widget, chunks[1]);
+    })?;
+
+    Ok(())
+}
+
+fn draw_profile_setup_complete_screen(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Profile Setup");
+        f.render_widget(block, size);
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Percentage(100),
+                ]
+                .as_ref(),
+            )
+            .split(size);
+
+        let completion_text = "Profile setup is now complete. Enjoy using the OpenAI CLI!";
+
+        let completion_paragraph = Paragraph::new(completion_text)
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Left);
+        f.render_widget(completion_paragraph, chunks[0]);
+
+        let finish_widget = Paragraph::new("[Finish]")
+            .style(Style::default().fg(Color::LightGreen))
+            .alignment(Alignment::Right);
+        f.render_widget(finish_widget, chunks[1]);
+    })?;
+
+    Ok(())
 }
