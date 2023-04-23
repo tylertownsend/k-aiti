@@ -13,7 +13,7 @@ use tui::{
 };
 use webbrowser;
 
-use std::io::stdout;
+use std::{io::stdout, env};
 
 use super::config::{CreatedConfig, CreatedAccount};
 
@@ -26,6 +26,7 @@ enum Screen {
     ProfileConfirmationPage,
     Disclaimer,
     CLIComplete,
+    DetectedAccount,
     Done
 }
 
@@ -86,7 +87,11 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
 
     terminal.clear()?;
 
-    let mut api_key_input = String::new();
+
+    let mut api_key_input = match env::var("OPENAI_API_KEY") {
+        Ok(key) => key,
+        Err(_) => String::new()
+    };
 
     let mut previous_screen = Screen::Done;
     let mut current_screen = Screen::Intro;
@@ -99,13 +104,57 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                     if let Event::Key(event) = read()? {
                         if event.code == KeyCode::Enter {
                             previous_screen = current_screen;
-                            current_screen = Screen::HasAccount;
+                            current_screen = if api_key_input != "" {
+                                Screen::DetectedAccount
+                            } else {
+                                Screen::HasAccount
+                            };
                             break;
                         }
                     }
                 }
                 terminal.clear()?
             }
+            Screen::DetectedAccount => {
+                let choices = vec!["Yes", "No"];
+                let mut choices_list = StatefulList::new(choices.clone().into_iter().map(ListItem::new).collect::<Vec<_>>());
+                loop {
+                    draw_account_found(&mut terminal, &mut choices_list)?;
+                    match read()? {
+                        Event::Key(event) => match event.code {
+                            KeyCode::Up => {
+                                choices_list.next();
+                            }
+                            KeyCode::Down => {
+                                choices_list.previous();
+                            }
+                            KeyCode::Enter => {
+                                // Proceed to the next screen based on the user's selection
+                                if let Some(selected_index) = &choices_list.state.selected() {
+                                    if choices[*selected_index] == "Yes" {
+                                        previous_screen = current_screen;
+                                        current_screen = Screen::AccountSetup;
+                                    } else {
+                                        previous_screen = current_screen;
+                                        current_screen = Screen::HasAccount;
+                                    }
+                                }
+                                break;
+                            }
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                let temp = previous_screen;
+                                previous_screen = current_screen;
+                                current_screen = temp;
+                                break;
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                        
+                    }
+                }
+                terminal.clear()?;
+            },
             Screen::HasAccount => {
                 // Render has_account screen and handle user input
                 // Update current_screen based on user input
@@ -233,17 +282,33 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                     draw_profile_confirmation_screen(&mut terminal, api_key_input.as_str(), &mut choices_list)?;
                     match read()? {
                         Event::Key(event) => match event.code {
-                            KeyCode::Char('c') | KeyCode::Char('C') => {
-                                previous_screen = current_screen;
-                                current_screen = Screen::Disclaimer;
+                            KeyCode::Up => {
+                                choices_list.next();
+                            }
+                            KeyCode::Down => {
+                                choices_list.previous();
+                            }
+                            KeyCode::Enter => {
+                                // Proceed to the next screen based on the user's selection
+                                if let Some(selected_index) = &choices_list.state.selected() {
+                                    if choices[*selected_index] == "Yes" {
+                                        previous_screen = current_screen;
+                                        current_screen = Screen::Disclaimer;
+                                    } else {
+                                        let temp = previous_screen;
+                                        previous_screen = current_screen;
+                                        current_screen = temp;
+                                        break;
+                                    }
+                                }
                                 break;
-                            },
+                            }
                             KeyCode::Char('b') | KeyCode::Char('B') => {
                                 let temp = previous_screen;
                                 previous_screen = current_screen;
                                 current_screen = temp;
                                 break;
-                            },
+                            }
                             _ => {}
                         },
                         _ => {}
@@ -257,7 +322,7 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                     draw_disclaimer_screen(&mut terminal)?; 
                     match read()? {
                         Event::Key(event) => match event.code {
-                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                            KeyCode::Enter => {
                                 previous_screen = current_screen;
                                 current_screen = Screen::CLIComplete;
                                 break;
@@ -336,6 +401,49 @@ pub fn draw_intro(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) ->
             .alignment(Alignment::Center)
             .block(Block::default().title(Span::styled("Introduction", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))));
         f.render_widget(intro, chunks[1]);
+    })?;
+
+    Ok(())
+}
+
+fn draw_account_found(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+    choices_list: &mut StatefulList<ListItem>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Account Detection");
+        f.render_widget(block, size);
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Percentage(100),
+                ]
+                .as_ref(),
+            )
+            .split(size);
+
+        let detected_prompt = Paragraph::new("We have detected environment variable OPENAI_API_KEY in your system.")
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Left);
+        f.render_widget(detected_prompt, chunks[0]);
+
+        let use_api_key_prompt = Paragraph::new("Would you like to use this as part of your openai account?")
+            .style(Style::default().fg(Color::White))
+            .alignment(Alignment::Left);
+        f.render_widget(use_api_key_prompt, chunks[1]);
+
+        let choices_widget = List::new(choices_list.items.clone())
+            .block(Block::default().borders(Borders::NONE))
+            .style(Style::default().fg(Color::White))
+            .highlight_style(Style::default().bg(Color::DarkGray).fg(Color::White))
+            .highlight_symbol("> ");
+        f.render_stateful_widget(choices_widget, chunks[2], &mut choices_list.state);
     })?;
 
     Ok(())

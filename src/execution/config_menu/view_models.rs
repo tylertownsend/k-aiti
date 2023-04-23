@@ -145,11 +145,3 @@ pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c
     terminal.clear()?;
     Ok(())
 }
-
-fn centered_rect(width: u16, height: u16, area: Rect) -> Rect {
-    let width = std::cmp::min(width, area.width);
-    let height = std::cmp::min(height, area.height);
-    let x = (area.width.saturating_sub(width)) / 2;
-    let y = (area.height.saturating_sub(height)) / 2;
-    Rect::new(area.left() + x, area.top() + y, width, height)
-}
