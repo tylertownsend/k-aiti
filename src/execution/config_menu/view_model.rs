@@ -9,8 +9,6 @@ use tui::{
     Terminal,
 };
 
-use serde::{Deserialize, Serialize};
-
 use super::{Model, ModelConfig};
 
 // #[derive(Serialize, Deserialize, Debug, Clone)]

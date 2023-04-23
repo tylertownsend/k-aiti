@@ -1,7 +1,3 @@
-use std::io::{stdout, Read, Write};
-use termion::get_tty;
-use termion::raw::{IntoRawMode, RawTerminal};
-use termion::screen::AlternateScreen;
 use crate::terminal_capture::traits::TerminalCapture;
 
 pub struct UnixTerminalCapture;

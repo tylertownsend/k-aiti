@@ -7,7 +7,6 @@ use async_openai::Client;
 // use futures::{StreamExt, Stream};
 
 
-const OPENAI_API_URL_COMPLETIONS: & str = "https://api.openai.com/v1/completions";
 pub const STOP_PHRASE: &str = "##End chat##";
 
 

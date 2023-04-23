@@ -485,7 +485,10 @@ fn draw_create_openai_account_screen(
 }
 
 fn create_account() {
-    webbrowser::open("https://platform.openai.com/account/api-keys").is_err();
+    let res = webbrowser::open("https://platform.openai.com/account/api-keys").is_err();
+    if res {
+        // encountered error
+    }
 }
 
 fn draw_profile_confirmation_screen(

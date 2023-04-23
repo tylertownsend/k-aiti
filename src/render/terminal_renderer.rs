@@ -27,7 +27,7 @@ impl TerminalRenderer {
         TerminalRenderer {}
     }
 
-    pub fn print_entity(&mut self, entity: &str, color: Color) {
+    pub fn print_entity(&mut self, entity: &str, _: Color) {
         execute!(std::io::stdout(), SetForegroundColor(Color::Cyan), SetAttribute(Attribute::Bold), Print(format!("{}: ", entity)), ResetColor).unwrap();
     }
 

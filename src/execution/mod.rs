@@ -8,10 +8,10 @@ pub mod input_provider;
 pub mod config_menu;
 
 pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
-    if let Some(search_matches) = matches.subcommand_matches("search") {
+    if let Some(_) = matches.subcommand_matches("search") {
     } else if let Some(debug_matches) = matches.subcommand_matches("debug") {
         
-        if let Some(error_message) = debug_matches.value_of("error") {
+        if let Some(_) = debug_matches.value_of("error") {
         } else {
             // Terminal capture code here
             match debug_mode::run_debug_mode(gpt_client).await {
@@ -49,7 +49,10 @@ pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
             Ok(()) => println!("Configuration menu closed successfully"),
             Err(e) => eprintln!("Error running configuration menu: {}", e),
         }
-        config_menu::write_user_settings(config);
+        match config_menu::write_user_settings(config) {
+            Ok(()) => println!("Configuration updates written successfully"),
+            Err(_) => eprintln!("Error updating configuration settings")
+        }
     }else {
     }
 }

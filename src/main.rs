@@ -2,8 +2,6 @@ use aita::ai::open_ai_gpt::{GptClient};
 use aita::execution;
 use aita::user_profile;
 use clap::{App, Arg, SubCommand};
-use std::env;
-use std::io::{self, Write};
 
 #[tokio::main]
 async fn main() {
@@ -11,7 +9,6 @@ async fn main() {
         user_profile::welcome();
         return;
     }
-    // let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
     let matches = App::new("aita")
         .version("0.1.0")
         .author("Tyler Townsend")

@@ -5,10 +5,10 @@ use crossterm::{
 };
 use tui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::Rect,
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, List, ListItem, Paragraph, ListState},
+    text::Span,
+    widgets::{Block, Borders, List, ListItem},
     Terminal,
 };
 
@@ -47,10 +47,10 @@ pub async fn run_config_menu(config: &mut Config) -> Result<(), Box<dyn std::err
     while running {
         terminal.draw(|f| {
             let size = f.size();
-            let layout = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(100)].as_ref())
-                .split(size);
+            // let layout = Layout::default()
+            //     .direction(Direction::Vertical)
+            //     .constraints([Constraint::Percentage(100)].as_ref())
+            //     .split(size);
 
             let menu_area = centered_rect(40, 50, size);
 

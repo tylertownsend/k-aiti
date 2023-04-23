@@ -1,14 +1,12 @@
 use std::io;
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode},
 };
 use tui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans, Text},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style},
+    widgets::{Block, Borders, List, ListItem},
     Terminal,
 };
 
@@ -18,9 +16,9 @@ use super::{view_model, Config};
 
 
 pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, config: &mut Config) -> Result<(), Box<dyn std::error::Error>> {
-    let mut exit = false;
+    let exit = false;
 
-    let mut active_panel = 0;
+    let active_panel = 0;
 
     // Initialize model list
     // let models = vec!["Model 1", "Model 2", "Model 3", "Model 4"];
@@ -30,11 +28,11 @@ pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c
         .map(|model| ListItem::new(model.name.clone()))
         .collect::<Vec<ListItem>>();
 
-    let model_ids = config
-        .models
-        .iter()
-        .map(|model| model.id.clone())
-        .collect::<Vec<String>>();
+    // let model_ids = config
+    //     .models
+    //     .iter()
+    //     .map(|model| model.id.clone())
+    //     .collect::<Vec<String>>();
 
     let mut models_list = StatefulList::new(model_names);
 

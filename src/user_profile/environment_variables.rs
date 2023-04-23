@@ -145,7 +145,7 @@ fn update_unix_shell_rc(env_vars: &[EnvVar], config_file: PathBuf) -> Result<(),
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::{File, read_to_string};
+    use std::fs::read_to_string;
     use tempfile::NamedTempFile;
 
     // #[test]
