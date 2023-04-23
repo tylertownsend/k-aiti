@@ -5,16 +5,81 @@ use crossterm::{
 };
 use std::{
     io::{stdout, Write},
-    time::Duration,
+    time::Duration, thread::current, process::Output, error::Error,
 };
 use tui::{
+    buffer::Buffer,
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, ListItem, List, Paragraph, ListState},
+    widgets::{Block, Borders, ListItem, List, Paragraph, ListState, StatefulWidget, Widget},
     Terminal,
 };
+
+use webbrowser;
+
+use std::collections::HashMap;
+
+#[derive(PartialEq, Eq, Hash, Clone)]
+enum Screen {
+    Intro,
+    HasAccount,
+    AccountSetup,
+    NavigateToOpenAI,
+    Done
+}
+
+pub struct TextInput<'a> {
+    block: Option<Block<'a>>,
+    style: Style,
+    text: &'a str,
+}
+
+impl<'a> TextInput<'a> {
+    pub fn new(text: &'a str) -> Self {
+        TextInput {
+            block: None,
+            style: Style::default(),
+            text,
+        }
+    }
+
+    pub fn block(mut self, block: Block<'a>) -> Self {
+        self.block = Some(block);
+        self
+    }
+
+    pub fn style(mut self, style: Style) -> Self {
+        self.style = style;
+        self
+    }
+}
+
+impl<'a> StatefulWidget for TextInput<'a> {
+    type State = &'a str;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let text = if area.width > 0 {
+            let cursor_position = self.text.chars().count();
+            let cursor_x = area.left() + cursor_position as u16;
+
+            buf.set_string(area.left(), area.top(), self.text, self.style);
+            buf.set_string(cursor_x, area.top(), "|", self.style.add_modifier(Modifier::BOLD));
+            self.text
+        } else {
+            ""
+        };
+
+        if let Some(block) = self.block {
+            let inner_area = block.inner(area);
+            buf.set_string(inner_area.left(), inner_area.top(), text, self.style);
+            block.render(area, buf);
+        } else {
+            buf.set_string(area.left(), area.top(), text, self.style);
+        }
+    }
+}
 
 pub struct StatefulList<T> {
     pub state: ListState,
@@ -72,36 +137,159 @@ pub fn run() -> Result<bool, Box<dyn std::error::Error>> {
 
     terminal.clear()?;
 
+    let mut navigation_graph: HashMap<Screen, Vec<Screen>> = HashMap::new();
+
+    navigation_graph.insert(Screen::Intro, vec![Screen::HasAccount]);
+    navigation_graph.insert(Screen::HasAccount, vec![Screen::AccountSetup, Screen::NavigateToOpenAI]);
+    navigation_graph.insert(Screen::AccountSetup, vec![Screen::HasAccount]);
+    navigation_graph.insert(Screen::NavigateToOpenAI, vec![Screen::HasAccount, Screen::AccountSetup]);
+
+    let mut previous_screen = Screen::Done;
+    let mut current_screen = Screen::Intro;
     loop {
-        draw_intro(&mut terminal)?;
-        if let Event::Key(event) = read()? {
-            if event.code == KeyCode::Enter {
+        match current_screen {
+            Screen::Intro => {
+                // Render intro screen
+                loop {
+                    draw_intro(&mut terminal)?;
+                    if let Event::Key(event) = read()? {
+                        if event.code == KeyCode::Enter {
+                            previous_screen = current_screen;
+                            current_screen = Screen::HasAccount;
+                            break;
+                        }
+                    }
+                }
+                terminal.clear()?
+            }
+            Screen::HasAccount => {
+                // Render has_account screen and handle user input
+                // Update current_screen based on user input
+                let choices = vec!["Yes", "No"];
+                let mut choices_list = StatefulList::new(choices.clone().into_iter().map(ListItem::new).collect::<Vec<_>>());
+                loop {
+                    draw_has_account_screen(&mut terminal, &mut choices_list)?;
+                    match read()? {
+                        Event::Key(event) => match event.code {
+                            KeyCode::Up => {
+                                choices_list.next();
+                            }
+                            KeyCode::Down => {
+                                choices_list.previous();
+                            }
+                            KeyCode::Enter => {
+                                // Proceed to the next screen based on the user's selection
+                                if let Some(selected_index) = &choices_list.state.selected() {
+                                    if choices[*selected_index] == "Yes" {
+                                        previous_screen = current_screen;
+                                        current_screen = Screen::AccountSetup;
+                                    } else {
+                                        previous_screen = current_screen;
+                                        current_screen = Screen::NavigateToOpenAI;
+                                    }
+                                }
+                                break;
+                            }
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                let temp = previous_screen;
+                                previous_screen = current_screen;
+                                current_screen = temp;
+                                break;
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    }
+                }
+                terminal.clear()?
+            }
+            Screen::AccountSetup => {
+                // Render yes_condition screen and handle user input
+                // Update current_screen based on user input
+                // Render intro screen
+                let mut api_key_input= String::new();
+                let mut editing_field: bool = false;
+                loop {
+                    draw_enter_openai_acount_screen(&mut terminal, &mut api_key_input, &mut editing_field)?;
+                    match read()? {
+                        Event::Key(event) => match event.code {
+                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                                if !editing_field {
+                                    // Proceed to the next screen
+                                    previous_screen = current_screen;
+                                    current_screen = Screen::Done;
+                                    break;
+                                } else {
+                                    editing_field = true;
+                                }
+                            }
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                if !editing_field {
+                                    let temp = previous_screen;
+                                    previous_screen = current_screen;
+                                    current_screen = temp;
+                                    break;
+                                }
+                            },
+                            KeyCode::Backspace => {
+                                if editing_field {
+                                    api_key_input.pop();
+                                }
+                            },
+                            KeyCode::Char(c) => {
+                                if editing_field {
+                                    api_key_input.push(c);
+                                }
+                            },
+                            KeyCode::Enter => {
+                                if editing_field {
+                                    editing_field = false;
+                                } else {
+                                    editing_field = true;
+                                }
+                            },
+                            _ => {}
+                        },
+                        _ => {}
+                        
+                    }
+                }
+                terminal.clear()?;
+            }
+            Screen::NavigateToOpenAI => {
+                // Render no_condition screen and handle user input
+                // Update current_screen based on user input
+                create_account();
+                loop {
+                    draw_create_openai_account_screen(&mut terminal)?;
+                    match read()? {
+                        Event::Key(event) => match event.code {
+                            KeyCode::Char('c') | KeyCode::Char('C') => {
+                                previous_screen = current_screen;
+                                current_screen = Screen::AccountSetup;
+                                break;
+                            },
+                            KeyCode::Char('b') | KeyCode::Char('B') => {
+                                let temp = previous_screen;
+                                previous_screen = current_screen;
+                                current_screen = temp;
+                                break;
+                            },
+                            _ => {}
+                        },
+                        _ => {}
+                        
+                    }
+                }
+                terminal.clear()?;
+            }
+            Screen::Done => {
                 break;
             }
         }
     }
 
-    let choices = vec!["Yes", "No"];
-    let mut choices_list = StatefulList::new(choices.into_iter().map(ListItem::new).collect::<Vec<_>>());
-    loop {
-        draw_has_account_screen(&mut terminal, &mut choices_list)?;
-        match read()? {
-            Event::Key(event) => match event.code {
-                KeyCode::Up => {
-                    choices_list.next();
-                }
-                KeyCode::Down => {
-                    choices_list.previous();
-                }
-                KeyCode::Enter => {
-                    // Proceed to the next screen based on the user's selection
-                    break;
-                }
-                _ => {}
-            },
-            _ => {}
-        }
-    }
+
 
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), Clear(ClearType::All))?;
@@ -183,13 +371,22 @@ fn draw_has_account_screen(
 
     Ok(())
 }
-fn draw_create_enter_openai_acount_screen(
+fn draw_enter_openai_acount_screen(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+    api_key: &str,
+    editing_field: &mut bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     terminal.draw(|f| {
         let size = f.size();
-        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Profile Setup");
-        f.render_widget(block, size);
+        let title = "OpenAI CLI - Profile Setup";
+            let title_span = Span::styled(
+                title,
+                Style::default()
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            );
+            let title_block = Block::default().title(title_span).borders(Borders::ALL);
+            f.render_widget(title_block, size);
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -197,8 +394,8 @@ fn draw_create_enter_openai_acount_screen(
             .constraints(
                 [
                     Constraint::Length(1),
-                    Constraint::Length(1),
-                    Constraint::Percentage(100),
+                    Constraint::Length(3),
+                    Constraint::Length(3)
                 ]
                 .as_ref(),
             )
@@ -209,8 +406,25 @@ fn draw_create_enter_openai_acount_screen(
             .alignment(Alignment::Left);
         f.render_widget(api_key_prompt, chunks[0]);
 
-        let api_key_input = Paragraph::new("aPiKeY12345")
-            .style(Style::default().fg(Color::Yellow))
+        let api_key_style = if *editing_field {
+            Style::default().fg(Color::Yellow).bg(Color::DarkGray)
+        } else {
+            Style::default().fg(Color::Yellow)
+        };
+
+        let api_key_text = if *editing_field {
+            format!("{}|", api_key)
+        } else {
+            api_key.to_string()
+        };
+
+        let input_block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::White));
+
+        let api_key_input = Paragraph::new(api_key_text)
+            .style(api_key_style)
+            .block(input_block)
             .alignment(Alignment::Left);
         f.render_widget(api_key_input, chunks[1]);
 
@@ -248,11 +462,15 @@ fn draw_create_openai_account_screen(
             .alignment(Alignment::Center);
         f.render_widget(create_account_prompt, chunks[0]);
 
-        let open_signup_page_widget = Paragraph::new("[Open Signup Page]")
+        let open_signup_page_widget = Paragraph::new("If your browser hasn't opened, please use the following link: \nhttps://platform.openai.com/account/api-keys")
             .style(Style::default().fg(Color::LightGreen))
             .alignment(Alignment::Center);
         f.render_widget(open_signup_page_widget, chunks[1]);
     })?;
 
     Ok(())
+}
+
+fn create_account() {
+    webbrowser::open("https://platform.openai.com/account/api-keys").is_err();
 }

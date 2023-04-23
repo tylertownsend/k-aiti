@@ -26,6 +26,7 @@ crossterm = "0.26.1"
 termimad = "0.12.0" 
 tui = { version = "0.16", default-features = false, features = ['crossterm', 'serde'] }
 dirs = "3.0"
+webbrowser = "0.5"
 
 [package.metadata.deb]
 # Package metadata for the Debian package
