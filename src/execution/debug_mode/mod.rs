@@ -33,8 +33,6 @@ pub async fn run_debug_mode(gpt_client: GptClient) -> Result<(), Box<dyn Error>>
         }
     }
 
-
-
     chat_client.render_response_with_custom_history(output.unwrap(), &mut client_request.messages).await?;
     Ok(())
 }

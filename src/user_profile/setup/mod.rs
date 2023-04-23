@@ -8,7 +8,7 @@ use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, ListItem, List, Paragraph, ListState},
+    widgets::{Block, Borders, ListItem, List, Paragraph, ListState, Wrap},
     Terminal,
 };
 use webbrowser;
@@ -422,7 +422,8 @@ fn draw_account_found(
                 [
                     Constraint::Length(3),
                     Constraint::Length(3),
-                    Constraint::Percentage(100),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
                 ]
                 .as_ref(),
             )
@@ -444,6 +445,11 @@ fn draw_account_found(
             .highlight_style(Style::default().bg(Color::DarkGray).fg(Color::White))
             .highlight_symbol("> ");
         f.render_stateful_widget(choices_widget, chunks[2], &mut choices_list.state);
+
+        let action_text = "[Enter] Select [B] Back";
+        let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
+        let action_block = Block::default().title(action_span).borders(Borders::ALL);
+        f.render_widget(action_block, chunks[3]);
     })?;
 
     Ok(())
@@ -464,7 +470,8 @@ fn draw_has_account_screen(
             .constraints(
                 [
                     Constraint::Length(3),
-                    Constraint::Percentage(100),
+                    Constraint::Length(3),
+                    Constraint::Length(3)
                 ]
                 .as_ref(),
             )
@@ -488,6 +495,11 @@ fn draw_has_account_screen(
             .split(chunks[1]);
 
         f.render_stateful_widget(choices_widget, h_chunks[1], &mut choices_list.state);
+
+        let action_text = "[Enter] Select [B] Back";
+        let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
+        let action_block = Block::default().title(action_span).borders(Borders::ALL);
+        f.render_widget(action_block, chunks[2]);
     })?;
 
     Ok(())
@@ -549,10 +561,10 @@ fn draw_enter_openai_acount_screen(
             .alignment(Alignment::Left);
         f.render_widget(api_key_input, chunks[1]);
 
-        let continue_widget = Paragraph::new("[Continue]")
-            .style(Style::default().fg(Color::LightGreen))
-            .alignment(Alignment::Right);
-        f.render_widget(continue_widget, chunks[2]);
+        let action_text = "[B] Back";
+        let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
+        let action_block = Block::default().title(action_span).borders(Borders::ALL);
+        f.render_widget(action_block, chunks[2]);
     })?;
 
     Ok(())
@@ -572,7 +584,8 @@ fn draw_create_openai_account_screen(
             .constraints(
                 [
                     Constraint::Length(1),
-                    Constraint::Percentage(100),
+                    Constraint::Length(3),
+                    Constraint::Length(3)
                 ]
                 .as_ref(),
             )
@@ -585,8 +598,14 @@ fn draw_create_openai_account_screen(
 
         let open_signup_page_widget = Paragraph::new("If your browser hasn't opened, please use the following link: \nhttps://platform.openai.com/account/api-keys")
             .style(Style::default().fg(Color::LightGreen))
-            .alignment(Alignment::Center);
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true });
         f.render_widget(open_signup_page_widget, chunks[1]);
+
+        let action_text = "[Enter] Continue [B] Back";
+        let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
+        let action_block = Block::default().title(action_span).borders(Borders::ALL);
+        f.render_widget(action_block, chunks[2]);
     })?;
 
     Ok(())
@@ -617,7 +636,8 @@ fn draw_profile_confirmation_screen(
                     Constraint::Length(1),
                     Constraint::Length(3),
                     Constraint::Length(3),
-                    Constraint::Percentage(100),
+                    Constraint::Length(3),
+                    Constraint::Length(3)
                 ]
                 .as_ref(),
             )
@@ -645,6 +665,11 @@ fn draw_profile_confirmation_screen(
             .highlight_style(Style::default().bg(Color::DarkGray).fg(Color::White))
             .highlight_symbol("> ");
         f.render_stateful_widget(choices_widget, chunks[3], &mut choices_list.state);
+
+        let action_text = "[Enter] Continue [B] Back";
+        let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
+        let action_block = Block::default().title(action_span).borders(Borders::ALL);
+        f.render_widget(action_block, chunks[4]);
     })?;
 
     Ok(())
@@ -677,14 +702,14 @@ fn draw_disclaimer_screen(
 
         let disclaimer_paragraph = Paragraph::new(disclaimer_text)
             .style(Style::default().fg(Color::White))
-            .alignment(Alignment::Left);
-            // .wrap(Wrap { trim: true });
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
         f.render_widget(disclaimer_paragraph, chunks[0]);
 
-        let continue_widget = Paragraph::new("[Continue]")
-            .style(Style::default().fg(Color::LightGreen))
-            .alignment(Alignment::Right);
-        f.render_widget(continue_widget, chunks[1]);
+        let action_text = "[Enter] Continue [B] Back";
+        let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
+        let action_block = Block::default().title(action_span).borders(Borders::ALL);
+        f.render_widget(action_block, chunks[1]);
     })?;
 
     Ok(())
@@ -714,13 +739,14 @@ fn draw_profile_setup_complete_screen(
 
         let completion_paragraph = Paragraph::new(completion_text)
             .style(Style::default().fg(Color::White))
-            .alignment(Alignment::Left);
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
         f.render_widget(completion_paragraph, chunks[0]);
 
-        let finish_widget = Paragraph::new("[Finish]")
-            .style(Style::default().fg(Color::LightGreen))
-            .alignment(Alignment::Right);
-        f.render_widget(finish_widget, chunks[1]);
+        let action_text = "[Enter] Finish";
+        let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
+        let action_block = Block::default().title(action_span).borders(Borders::ALL);
+        f.render_widget(action_block, chunks[1]);
     })?;
 
     Ok(())
