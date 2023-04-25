@@ -54,7 +54,7 @@ impl TerminalRenderer {
                     });
                 }
                 Err(err) => {
-                    print_error(&mut lock, err.to_string())
+                    self.print_error(&mut lock, err.to_string())
                 }
             }
             stdout().flush()?;
@@ -63,9 +63,30 @@ impl TerminalRenderer {
         Ok(response_string)
     }
 
-    fn print_entity(&mut self, entity: &str, color: Color) {
+    pub fn print_content(
+        &mut self,
+        lock: &mut std::io::StdoutLock,
+        content: &str,
+        state: &mut TextState
+    ) -> Result<(), Box<dyn Error>> {
+        print_content(lock, content, state)
+    }
+
+    pub fn print_entity(&mut self, entity: &str, color: Color) {
         execute!(std::io::stdout(), SetForegroundColor(color), SetAttribute(Attribute::Bold), Print(format!("{}: ", entity)), ResetColor).unwrap();
     }
+
+    pub fn print_error(
+        &mut self,
+        lock: &mut std::io::StdoutLock,
+        err: String
+    ) {
+        execute!(lock,
+                SetForegroundColor(Color::Red),
+                Print(format!("error: {}", err)),
+                ResetColor)
+                .unwrap();
+}
 }
 
 fn print_content(
@@ -96,15 +117,4 @@ fn print_content(
         }
     }
     Ok(())
-}
-
-fn print_error(
-    lock: &mut std::io::StdoutLock,
-    err: String
-) {
-    execute!(lock,
-                SetForegroundColor(Color::Red),
-                Print(format!("error: {}", err)),
-                ResetColor)
-                .unwrap();
 }
