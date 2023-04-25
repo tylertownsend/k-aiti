@@ -11,8 +11,8 @@ use tui::{
 };
 
 use crate::execution::config_menu::stateful_list::StatefulList;
-
-use super::{view_model, Config};
+use crate::config::Config;
+use super::view_model;
 
 
 pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, config: &mut Config) -> Result<(), Box<dyn std::error::Error>> {

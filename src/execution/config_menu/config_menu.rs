@@ -14,7 +14,7 @@ use tui::{
 
 use crate::execution::config_menu::view_models;
 
-use super::Config;
+use crate::config::Config;
 
 #[derive(PartialEq)]
 enum MenuItem {

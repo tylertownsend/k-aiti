@@ -9,7 +9,8 @@ use tui::{
     Terminal,
 };
 
-use super::{Model, ModelConfig};
+use crate::config::{Model, ModelConfig};
+
 
 // #[derive(Serialize, Deserialize, Debug, Clone)]
 // struct Model {
@@ -26,12 +27,22 @@ use super::{Model, ModelConfig};
 //     top_p: f64,
 // }
 
-pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, model: &mut Model) -> Result<(), Box<dyn Error>> {
+pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c_model: &mut Model) -> Result<(), Box<dyn Error>> {
 
-    match &mut model.config {
-        ModelConfig::OpenAIGPT { max_tokens, temperature, top_p} => {
-            let mut config = OpenAIGPT { max_tokens: *max_tokens, temperature: *temperature, top_p: *top_p };
-            let required_config = ModelRequiredConfig {id: model.id.to_string(), name: model.name.to_string()};
+    match &mut c_model.config {
+        ModelConfig::OpenAIGPT {
+            max_tokens,
+            temperature,
+            top_p,
+            n,
+            model
+        } => {
+            let mut config = OpenAIGPT { 
+                max_tokens: *max_tokens,
+                temperature: *temperature,
+                top_p: *top_p
+            };
+            let required_config = ModelRequiredConfig {id: c_model.id.to_string(), name: c_model.name.to_string()};
             config = view_gpt_config(terminal, required_config, config)?;
             *max_tokens = config.max_tokens;
             *temperature = config.temperature;
@@ -45,7 +56,7 @@ struct ModelRequiredConfig {
     id: String,
     name: String,
 }
-struct OpenAIGPT { max_tokens: u32, temperature: f64, top_p: f64 }
+struct OpenAIGPT { max_tokens: u16, temperature: f32, top_p: f64 }
 
 fn view_gpt_config(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
@@ -146,8 +157,8 @@ fn view_gpt_config(
                     if !editing_field {
                         let confirmed = present_confirmation(terminal)?;
                         if confirmed {
-                            model_config.max_tokens = input_widgets[2].parse::<u32>()?;
-                            model_config.temperature = input_widgets[3].parse::<f64>()?;
+                            model_config.max_tokens = input_widgets[2].parse::<u16>()?;
+                            model_config.temperature = input_widgets[3].parse::<f32>()?;
                             model_config.top_p =  input_widgets[4].parse::<f64>()?;
                         }
                     }
@@ -213,8 +224,8 @@ fn view_gpt_config(
     //     &mut model_config.temperature.to_string(),
     //     &mut model_config.top_p.to_string(),
     // ];
-    model_config.max_tokens = input_widgets[2].parse::<u32>()?;
-    model_config.temperature = input_widgets[3].parse::<f64>()?;
+    model_config.max_tokens = input_widgets[2].parse::<u16>()?;
+    model_config.temperature = input_widgets[3].parse::<f32>()?;
     model_config.top_p =  input_widgets[4].parse::<f64>()?;
 
     terminal.clear()?;

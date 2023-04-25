@@ -1,24 +1,22 @@
 use clap::ArgMatches;
 
-use crate::ai::open_ai_gpt::GptClient;
-
 pub mod chat_mode;
 pub mod debug_mode;
 pub mod input_provider;
 pub mod config_menu;
 
-pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
+pub async fn process_command(matches: ArgMatches) {
     if let Some(_) = matches.subcommand_matches("search") {
-    } else if let Some(debug_matches) = matches.subcommand_matches("debug") {
+    } else if let Some(_) = matches.subcommand_matches("debug") {
         
-        if let Some(_) = debug_matches.value_of("error") {
-        } else {
-            // Terminal capture code here
-            match debug_mode::run_debug_mode(gpt_client).await {
-                Ok(_) => println!("Debug Mode Run."),
-                Err(e) => eprintln!("Error: {}", e),
-            };
-        }
+        // if let Some(_) = debug_matches.value_of("error") {
+        // } else {
+        //     // Terminal capture code here
+        //     match debug_mode::run_debug_mode(gpt_client).await {
+        //         Ok(_) => println!("Debug Mode Run."),
+        //         Err(e) => eprintln!("Error: {}", e),
+        //     };
+        // }
     } else if let Some(_) = matches.subcommand_matches("chat") {
         // let chat_history_path = "chat_history.txt";
 
@@ -28,8 +26,20 @@ pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
         // } else {
         //     Vec::new()
         // };
-
-        match chat_mode::run_chat_mode(gpt_client).await {
+        let config = match crate::config::io::read_user_settings() {
+            Ok(path) => path,
+            Err(error) => {
+                panic!("{}", error);
+            }
+        };
+        let c_model = match crate::config::get_model_by_mode(&config, crate::config::ModeSelection::Chat) {
+            Some(model) => model,
+            _ => {
+                println!("Corrupted settings file found.");
+                return;
+            }
+        };
+        match chat_mode::run_chat_mode(c_model).await {
             Ok(_) => println!("Chat ended."),
             Err(e) => eprintln!("Error: {}", e),
         };
@@ -38,7 +48,7 @@ pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
         //     .and_then(|mut file| file.write_all(chat_history.join(STOP_PHRASE).as_bytes()))
         //     .expect("Failed to save chat history");
     } else if let Some(_) = matches.subcommand_matches("config") {
-        let mut config = match config_menu::read_user_settings() {
+        let mut config = match crate::config::io::read_user_settings() {
             Ok(path) => path,
             Err(error) => {
                 println!("{}", error);
@@ -49,7 +59,7 @@ pub async fn process_command(matches: ArgMatches, gpt_client: GptClient) {
             Ok(()) => println!("Configuration menu closed successfully"),
             Err(e) => eprintln!("Error running configuration menu: {}", e),
         }
-        match config_menu::write_user_settings(config) {
+        match crate::config::io::write_user_settings(config) {
             Ok(()) => println!("Configuration updates written successfully"),
             Err(_) => eprintln!("Error updating configuration settings")
         }

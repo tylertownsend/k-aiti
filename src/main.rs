@@ -1,4 +1,3 @@
-use aita::ai::open_ai_gpt::{GptClient};
 use aita::execution;
 use aita::user_profile;
 use clap::{App, Arg, SubCommand};
@@ -41,6 +40,5 @@ async fn main() {
             .aliases(&["configure", "config"])
         .get_matches();
 
-    let gpt_client = GptClient::new(1000, 1, 0.8, String::from("gpt-3.5-turbo"));
-    execution::process_command(matches, gpt_client).await
+    execution::process_command(matches).await
 }

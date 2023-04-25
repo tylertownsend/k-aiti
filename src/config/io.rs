@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use dirs::home_dir;
 use serde_json;
 
-use crate::execution::config_menu::Config;
+use crate::config::Config;
 
 const USER_CONFIGURATION: & str = ".aita/configuration/settings.json";
 
@@ -21,7 +21,12 @@ pub fn read_user_settings() -> Result<Config, Box<dyn Error>> {
     let json_contents = fs::read_to_string(json_file_path).expect("Could not read the JSON file");
 
     // Deserialize the JSON contents into a `Config` struct
-    let config: Config = serde_json::from_str(&json_contents)?;
+    let config: Config = match serde_json::from_str(&json_contents) {
+        Ok(conf) => conf,
+        Err(error) => {
+            panic!("Settings file is corrupted!{}", error);
+        }
+    };
     Ok(config)
 }
 

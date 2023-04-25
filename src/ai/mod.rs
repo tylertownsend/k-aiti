@@ -1,103 +1,25 @@
-pub mod open_ai_gpt;
-
-use crate::render::terminal_renderer::{TerminalRenderer, TextState};
-use crate::execution::input_provider::get_user_input;
 use std::error::Error;
-use std::io::{stdout, Write};
-use async_openai::types::ChatCompletionRequestMessage;
-use futures::stream::StreamExt;
-use crossterm::style::Color;
 
+use crate::config::{Model, ModelConfig};
+use self::{open_ai_gpt::GptClient};
 
-use self::open_ai_gpt::{GptClientRequest, GptClient};
+pub mod chat;
+mod chat_client;
+mod chat_model;
+mod open_ai_gpt;
 
-pub struct ChatClient {
-    gpt_client: GptClient,
-    chat_log: Vec<ChatCompletionRequestMessage>,
-    renderer: TerminalRenderer
-}
+pub use chat_client::ChatClient;
+pub use chat_model::{ChatModel, ChatModelRequest};
 
-impl ChatClient {
-    pub fn new(gpt_client: GptClient, renderer: TerminalRenderer) -> Self {
-        Self { gpt_client, chat_log: Vec::new(), renderer }
-    }
-
-    pub async fn render_input(&mut self) -> Result<String, Box<dyn Error>> {
-        self.renderer.print_entity("You", Color::Cyan);
-        get_user_input().await
-    }
-
-    pub async fn render_response(&mut self, user_input: String) -> Result<String, Box<dyn Error>> {
-        let mut response_string = String::new();
-        let mut lock = stdout().lock();
-
-        let user_message = self.gpt_client.clone().create_user_message(user_input)?;
-        self.chat_log.push(user_message);
-        let client_request = GptClientRequest { messages: self.chat_log.clone() };
-
-        let mut stream = self.gpt_client.generate_response_stream(&client_request).await?;
-
-        self.renderer.print_entity("AI ", Color::Green);
-        // TODO: move TextState to renderer completely
-        let mut state = TextState::new();
-        while let Some(result) = stream.next().await {
-            match result {
-                Ok(response) => {
-                    response.choices.iter().for_each(|chat_choice| {
-                        if let Some(ref content) = chat_choice.delta.content {
-                            self.renderer.print_content(& mut lock, content, & mut state).unwrap();
-                            response_string.push_str(content);
-                        }
-                    });
-                }
-                Err(err) => {
-                    self.renderer.print_error(&mut lock, err.to_string())
-                }
-            }
-            stdout().flush()?;
+// TODO: Implement a model path to determine the correct selection
+pub fn create_chat_model(c_model: &Model) -> Result<Box<dyn ChatModel>, Box<dyn Error>> {
+    let model = match c_model.name.as_str() {
+        "ChatGPT" => {
+            let config = serde_json::to_value(c_model.config.clone())?;
+            let gpt_client = GptClient::new(config);
+            Box::new(gpt_client) as Box<dyn ChatModel>
         }
-        println!("\n");
-        let response_message = self.gpt_client
-            .clone()
-            .create_assistant_message(response_string.clone())?;
-        self.chat_log.push(response_message);
-        Ok(response_string)
-    }
-
-    pub async fn render_response_with_custom_history(&mut self, user_input: String, chat_log: &mut Vec<ChatCompletionRequestMessage>) -> Result<String, Box<dyn Error>> {
-        let mut response_string = String::new();
-        let mut lock = stdout().lock();
-
-        let user_message = self.gpt_client.clone().create_user_message(user_input)?;
-        chat_log.push(user_message);
-        let client_request = GptClientRequest { messages: chat_log.clone() };
-
-        let mut stream = self.gpt_client.generate_response_stream(&client_request).await?;
-
-        self.renderer.print_entity("AI ", Color::Green);
-        // TODO: move TextState to renderer completely
-        let mut state = TextState::new();
-        while let Some(result) = stream.next().await {
-            match result {
-                Ok(response) => {
-                    response.choices.iter().for_each(|chat_choice| {
-                        if let Some(ref content) = chat_choice.delta.content {
-                            self.renderer.print_content(& mut lock, content, & mut state).unwrap();
-                            response_string.push_str(content);
-                        }
-                    });
-                }
-                Err(err) => {
-                    self.renderer.print_error(&mut lock, err.to_string())
-                }
-            }
-            stdout().flush()?;
-        }
-        println!("\n");
-        let response_message = self.gpt_client
-            .clone()
-            .create_assistant_message(response_string.clone())?;
-        chat_log.push(response_message);
-        Ok(response_string)
-    }
+        _ => return Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Unsupported model name"))),
+    };
+    Ok(model)
 }

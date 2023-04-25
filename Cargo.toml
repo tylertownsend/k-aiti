@@ -28,6 +28,8 @@ tui = { version = "0.16", default-features = false, features = ['crossterm', 'se
 dirs = "3.0"
 webbrowser = "0.5"
 tempfile = "3.2.0"
+chrono = "0.4"
+async-trait = "0.1"
 
 [package.metadata.deb]
 # Package metadata for the Debian package
