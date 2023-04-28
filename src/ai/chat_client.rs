@@ -1,5 +1,5 @@
 use crate::ai::chat_model::{ChatModel, ChatModelRequest};
-use crate::render::terminal_renderer::{TerminalRenderer, TextState};
+use crate::render::terminal_renderer::{TerminalRenderer};
 use crate::execution::input_provider::get_user_input;
 use std::error::Error;
 use std::io::{stdout, Write};
@@ -32,16 +32,13 @@ impl ChatClient {
         let client_request = ChatModelRequest{ messages: self.chat_log.clone() };
 
         let mut stream = self.chat_model.create_response_stream(&client_request).await?;
-
         renderer.print_entity("AI ", Color::Green);
-        // TODO: move TextState to renderer completely
-        let mut state = TextState::new();
         while let Some(result) = stream.next().await {
             match result {
                 Ok(response) => {
                     response.choices.iter().for_each(|chat_choice| {
                         if let Some(ref content) = chat_choice.delta.content {
-                            renderer.print_content(& mut lock, content, & mut state).unwrap();
+                            renderer.render(& mut lock, content).unwrap();
                             response_string.push_str(content);
                         }
                     });
@@ -53,6 +50,7 @@ impl ChatClient {
             stdout().flush()?;
         }
         println!("\n");
+
         let response_message = self.chat_model
             .create_assistant_message(response_string.clone())?;
         self.chat_log.push(response_message);

@@ -1,4 +1,4 @@
-use super::{ModelConfig, Config, Model};
+use super::{Config, Model};
 
 pub enum ModeSelection {
     Completion,

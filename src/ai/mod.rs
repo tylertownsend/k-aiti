@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::config::{Model, ModelConfig};
+use crate::config::Model;
 use self::{open_ai_gpt::GptClient};
 
 pub mod chat;
