@@ -1,5 +1,5 @@
 use crossterm::event::{self, Event as CEvent, KeyCode};
-use std::{io, error::Error};
+use std::{io, error::Error, num};
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Alignment},
@@ -78,6 +78,7 @@ fn view_config(
 
     let mut selected_field = 0;
     let mut editing_field = false;
+    let mut scroll_offset = 0;
 
     loop {
         terminal.draw(|frame| {
@@ -99,8 +100,7 @@ fn view_config(
                 .margin(1)
                 .constraints([
                     Constraint::Length(3),
-                    Constraint::Min(config_fields.len() as u16),
-                    Constraint::Length(3),
+                    Constraint::Length(5),
                     Constraint::Length(3),
                 ])
                 .split(size);
@@ -122,15 +122,23 @@ fn view_config(
 
             // dynamic fields
             let mut field_list = Vec::new();
-            for (i, (label, input_widget)) in config_fields.iter().zip(config_widget.iter_mut()).enumerate() {
+            let num_displayed_fields = std::cmp::min(5, config_fields.len() - scroll_offset);
+            for (i, (label, input_widget)) in config_fields.iter()
+                                                                            .skip(scroll_offset)
+                                                                            .take(num_displayed_fields)
+                                                                            .zip(config_widget
+                                                                                .iter_mut()
+                                                                                .skip(scroll_offset)
+                                                                                .take(num_displayed_fields))
+                                                                            .enumerate() {
                 let input_block = Block::default()
                     .title(Span::styled(label, Style::default().fg(Color::Yellow)))
                     .borders(Borders::ALL);
                 let mut input_style = Style::default().fg(Color::White);
-                if i == selected_field {
+                if i + scroll_offset == selected_field {
                     input_style = input_style.bg(Color::DarkGray);
                 }
-                let input_text = if editing_field && i == selected_field {
+                let input_text = if editing_field && i + scroll_offset == selected_field {
                     format!("{}|", input_widget.as_str())
                 } else {
                     input_widget.to_string()
@@ -143,12 +151,12 @@ fn view_config(
             let field_chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(
-                    std::iter::repeat(Constraint::Length(1))
-                        .take(field_list.len())
+                    std::iter::repeat(Constraint::Length(3))
+                        .take(num_displayed_fields) // Limit to 5 displayed fields
                         .collect::<Vec<_>>()
                         .as_ref(),
                 )
-                .split(chunks[2]);
+                .split(chunks[1]);
 
             for (i, field) in field_list.into_iter().enumerate() {
                 frame.render_widget(field, field_chunks[i]);
@@ -158,7 +166,7 @@ fn view_config(
             let action_text = "[S] Save  C] Cancel [B] Back";
             let action_span = Span::styled(action_text, Style::default().fg(Color::Yellow));
             let action_block = Block::default().title(action_span).borders(Borders::ALL);
-            frame.render_widget(action_block, chunks[3]);
+            frame.render_widget(action_block, chunks[2]);
         })?;
 
         match event::read()? {
@@ -196,13 +204,19 @@ fn view_config(
                         if selected_field > 0 {
                             selected_field -= 1;
                         }
+                        if selected_field < scroll_offset {
+                            scroll_offset = selected_field;
+                        }
                     }
                 }
                 KeyCode::Down => {
                     if !editing_field {
-                        // if selected_field < input_widgets.len() - 1 {
-                        //     selected_field += 1;
-                        // }
+                        if selected_field < config_fields.len() - 1 {
+                            selected_field += 1;
+                        }
+                        if selected_field >= scroll_offset + 5 {
+                            scroll_offset = selected_field - 4;
+                        }
                     }
                 }
                 KeyCode::Enter => {
