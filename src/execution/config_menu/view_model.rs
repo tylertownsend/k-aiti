@@ -87,7 +87,7 @@ fn view_config(
                 .borders(Borders::ALL)
                 .title("View Model")
                 .style(Style::default()
-                    .fg(Color::Yellow)
+                    .fg(Color::White)
                     .add_modifier(Modifier::BOLD));
             frame.render_widget(block, size);
     
@@ -100,7 +100,7 @@ fn view_config(
                 .margin(1)
                 .constraints([
                     Constraint::Length(3),
-                    Constraint::Length(5),
+                    Constraint::Length(15),
                     Constraint::Length(3),
                 ])
                 .split(size);
@@ -132,7 +132,7 @@ fn view_config(
                                                                                 .take(num_displayed_fields))
                                                                             .enumerate() {
                 let input_block = Block::default()
-                    .title(Span::styled(label, Style::default().fg(Color::Yellow)))
+                    .title(Span::styled(label, Style::default().fg(Color::White)))
                     .borders(Borders::ALL);
                 let mut input_style = Style::default().fg(Color::White);
                 if i + scroll_offset == selected_field {
@@ -164,7 +164,7 @@ fn view_config(
 
             // actions
             let action_text = "[S] Save  C] Cancel [B] Back";
-            let action_span = Span::styled(action_text, Style::default().fg(Color::Yellow));
+            let action_span = Span::styled(action_text, Style::default().fg(Color::White));
             let action_block = Block::default().title(action_span).borders(Borders::ALL);
             frame.render_widget(action_block, chunks[2]);
         })?;
@@ -271,7 +271,7 @@ fn present_confirmation(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -
             let span = Span::styled(
                 text,
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(Color::White)
                     .add_modifier(Modifier::BOLD),
             );
             let block = Block::default().title(span).borders(Borders::ALL);
