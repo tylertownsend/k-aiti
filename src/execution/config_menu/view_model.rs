@@ -11,22 +11,6 @@ use tui::{
 
 use crate::config::Model;
 
-
-// #[derive(Serialize, Deserialize, Debug, Clone)]
-// struct Model {
-//     id: String,
-//     name: String,
-//     model_path: String,
-//     config: ModelConfig,
-// }
-
-// #[derive(Serialize, Deserialize, Debug, Clone)]
-// struct ModelConfig {
-//     max_tokens: u32,
-//     temperature: f64,
-//     top_p: f64,
-// }
-
 pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c_model: &mut Model) -> Result<(), Box<dyn Error>> {
     let required_config = ModelRequiredConfig{
         id: c_model.id.to_string(),
@@ -78,7 +62,7 @@ fn view_config(
 
     let mut selected_field = 0;
     let mut editing_field = false;
-    let mut scroll_offset = 0;
+    let scroll_offset = 0;
 
     loop {
         terminal.draw(|frame| {
@@ -99,7 +83,7 @@ fn view_config(
                 .direction(Direction::Vertical)
                 .margin(1)
                 .constraints([
-                    Constraint::Length(3),
+                    Constraint::Length(5),
                     Constraint::Length(15),
                     Constraint::Length(3),
                 ])
@@ -113,7 +97,7 @@ fn view_config(
                 .block(Block::default()
                     .border_style(Style::default().fg(Color::White))
                     .borders(Borders::ALL)
-                    .title(Span::styled("Model", Style::default()
+                    .title(Span::styled("\nModel", Style::default()
                         .fg(Color::Cyan)
                         .add_modifier(Modifier::BOLD))
                 ));
@@ -163,35 +147,45 @@ fn view_config(
             }
 
             // actions
-            let action_text = "[S] Save  C] Cancel [B] Back";
+            let action_text = if editing_field {
+                "[S] Save [ESC] Stop Editing [B] Back"
+            } else {
+                "[E] Edit [B] Back"
+            };
             let action_span = Span::styled(action_text, Style::default().fg(Color::White));
             let action_block = Block::default().title(action_span).borders(Borders::ALL);
-            frame.render_widget(action_block, chunks[2]);
+            let action_paragraph_text = if editing_field {
+                "Editing"
+            } else {
+                ""
+            };
+            let action_paragraph_text_color = if editing_field {
+                Color::Yellow
+            } else {
+                Color::White
+            };
+            let action_paragraph = Paragraph::new(action_paragraph_text)
+                .style(Style::default().fg(action_paragraph_text_color))
+                .block(action_block);
+            frame.render_widget(action_paragraph, chunks[2]);
         })?;
 
         match event::read()? {
             CEvent::Key(event) => match event.code {
                 KeyCode::Char('s') | KeyCode::Char('S') => {
-                    if !editing_field {
+                    if editing_field {
                         let confirmed = present_confirmation(terminal)?;
                         if confirmed {
-                            // for (field, value) in config_fields.iter().zip(input_widgets.iter()) {
-                            //     config[field] = serde_json::Value::String(value.clone());
-                            // }
+                            // Save changes
+                            for (field, value) in config_fields.iter().zip(config_widget.iter()) {
+                                config[field] = serde_json::Value::String(value.clone());
+                            }
                         }
+                        editing_field = false;
                     }
                 }
                 KeyCode::Char('c') | KeyCode::Char('C') => {
                     if !editing_field {
-                        // input_widgets = config_fields
-                        //     .iter()
-                        //     .map(|field| {
-                        //         config[field]
-                        //             .as_str()
-                        //             .unwrap_or_else(|| "Unknown value")
-                        //             .to_string()
-                        //     })
-                        //     .collect();
                     }
                 }
                 KeyCode::Char('b') | KeyCode::Char('B') => {
@@ -199,39 +193,19 @@ fn view_config(
                         break;
                     }
                 }
-                KeyCode::Up => {
+                KeyCode::Char('e') | KeyCode::Char('E') => {
                     if !editing_field {
-                        if selected_field > 0 {
-                            selected_field -= 1;
-                        }
-                        if selected_field < scroll_offset {
-                            scroll_offset = selected_field;
-                        }
-                    }
-                }
-                KeyCode::Down => {
-                    if !editing_field {
-                        if selected_field < config_fields.len() - 1 {
-                            selected_field += 1;
-                        }
-                        if selected_field >= scroll_offset + 5 {
-                            scroll_offset = selected_field - 4;
-                        }
-                    }
-                }
-                KeyCode::Enter => {
-                    if !editing_field && selected_field >= config_fields.len() {
                         editing_field = !editing_field;
                     }
                 }
                 KeyCode::Char(c) => {
                     if editing_field {
-                        // input_widgets[selected_field].push(c);
+                        config_widget[selected_field].push(c);
                     }
                 }
                 KeyCode::Backspace => {
                     if editing_field {
-                        // input_widgets[selected_field].pop();
+                        config_widget[selected_field].pop();
                     }
                 }
                 KeyCode::Esc => {
@@ -239,6 +213,20 @@ fn view_config(
                         editing_field = false;
                     } else {
                         break;
+                    }
+                }
+                KeyCode::Tab => {
+                    if editing_field {
+                        selected_field = (selected_field + 1) % config_fields.len();
+                    }
+                }
+                KeyCode::BackTab => {
+                    if editing_field {
+                        if selected_field == 0 {
+                            selected_field = config_fields.len() - 1;
+                        } else {
+                            selected_field -= 1;
+                        }
                     }
                 }
                 _ => {}
