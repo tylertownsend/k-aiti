@@ -62,6 +62,7 @@ fn view_config(
 
     let mut selected_field = 0;
     let mut editing_field = false;
+    let mut unsaved_changes = false;
     let scroll_offset = 0;
 
     loop {
@@ -119,7 +120,7 @@ fn view_config(
                     .title(Span::styled(label, Style::default().fg(Color::White)))
                     .borders(Borders::ALL);
                 let mut input_style = Style::default().fg(Color::White);
-                if i + scroll_offset == selected_field {
+                if editing_field && i + scroll_offset == selected_field {
                     input_style = input_style.bg(Color::DarkGray);
                 }
                 let input_text = if editing_field && i + scroll_offset == selected_field {
@@ -177,6 +178,7 @@ fn view_config(
                         let confirmed = present_confirmation(terminal)?;
                         if confirmed {
                             // Save changes
+                            unsaved_changes = false;
                             for (field, value) in config_fields.iter().zip(config_widget.iter()) {
                                 config[field] = serde_json::Value::String(value.clone());
                             }
@@ -200,17 +202,26 @@ fn view_config(
                 }
                 KeyCode::Char(c) => {
                     if editing_field {
+                        unsaved_changes = true;
                         config_widget[selected_field].push(c);
                     }
                 }
                 KeyCode::Backspace => {
                     if editing_field {
+                        unsaved_changes = true;
                         config_widget[selected_field].pop();
                     }
                 }
                 KeyCode::Esc => {
                     if editing_field {
-                        editing_field = false;
+                        if unsaved_changes {
+                            let abort_confirmed = present_abort_confirmation(terminal)?;
+                            if abort_confirmed {
+                                editing_field = false;
+                            }
+                        } else {
+                            editing_field = false;
+                        }
                     } else {
                         break;
                     }
@@ -244,26 +255,15 @@ fn present_confirmation(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -
     loop {
         terminal.draw(|frame| {
             let size = frame.size();
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Length(3),
-                    ]
-                    .as_ref(),
-                )
-                .split(size);
 
             let text = "Save changes? [Y/N]";
-            let span = Span::styled(
-                text,
-                Style::default()
+            let block = Block::default().borders(Borders::ALL);
+            let paragraph = Paragraph::new(text)
+                .style(Style::default()
                     .fg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            );
-            let block = Block::default().title(span).borders(Borders::ALL);
-            frame.render_widget(block, chunks[0]);
+                    .add_modifier(Modifier::BOLD))
+                .block(block);
+            frame.render_widget(paragraph, size);
         })?;
 
         match event::read()? {
@@ -280,6 +280,47 @@ fn present_confirmation(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -
             _ => {}
         }
     }
+    terminal.clear()?;
+    Ok(confirmed)
+}
+
+fn present_abort_confirmation(
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+) -> Result<bool, Box<dyn Error>> {
+    let text = "Unsaved changes will be aborted. Do you want to continue? [Y/N]: ";
+    let mut confirmed = false;
+
+    loop {
+        terminal.draw(|frame| {
+            let size = frame.size();
+            let block = Block::default()
+                .borders(Borders::ALL)
+                .title("Abort Confirmation")
+                .style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+            // frame.render_widget(block, size);
+
+            let text_block = Paragraph::new(Spans::from(vec![Span::raw(text)]))
+                .style(Style::default().fg(Color::White))
+                .alignment(Alignment::Left)
+                .block(block);
+            frame.render_widget(text_block, size);
+        })?;
+
+        match event::read()? {
+            CEvent::Key(event) => match event.code {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    confirmed = true;
+                    break;
+                }
+                KeyCode::Char('n') | KeyCode::Char('N') => {
+                    break;
+                }
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+
     terminal.clear()?;
     Ok(confirmed)
 }
