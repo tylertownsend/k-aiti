@@ -27,17 +27,20 @@ impl GptClient  {
     pub fn new(config: serde_json::Value) -> GptClient {
         
         let max_tokens = match config.get("max_tokens") {
-            Some(value) => value.as_u64().unwrap_or(0) as u16,
+            Some(value) => {
+                println!("{}", value);
+                value.to_string().parse::<u16>().unwrap_or(0)
+            }
             None => 1000,
         };
         
         let n = match config.get("n") {
-            Some(value) => value.as_u64().unwrap_or(0) as u8,
+            Some(value) => value.to_string().parse::<u8>().unwrap_or(0),
             None => 1,
         };
         
         let temperature = match config.get("temperature") {
-            Some(value) => value.as_f64().unwrap_or(0.0) as f32,
+            Some(value) => value.to_string().parse::<f32>().unwrap_or(1.0),
             None => 0.8,
         };
         

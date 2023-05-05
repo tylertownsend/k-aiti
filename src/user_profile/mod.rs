@@ -4,7 +4,7 @@ use std::error::Error;
 use self::config::{ Config };
 
 mod io;
-mod config;
+pub mod config;
 mod setup;
 mod environment_variables;
 

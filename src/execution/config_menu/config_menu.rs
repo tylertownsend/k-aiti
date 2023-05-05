@@ -15,10 +15,11 @@ use tui::{
 use crate::execution::config_menu::view_models;
 
 use crate::config::Config;
+use crate::execution::profile_menu::present_profile;
 
 #[derive(PartialEq)]
 enum MenuItem {
-    SelectMode,
+    ViewProfile,
     ViewModels,
     // AddRemoveModels,
     Quit,
@@ -34,7 +35,7 @@ pub async fn run_config_menu(config: &mut Config) -> Result<(), Box<dyn std::err
     terminal.hide_cursor()?; // Hide the cursor
 
     let menu_items = [
-        MenuItem::SelectMode,
+        MenuItem::ViewProfile,
         MenuItem::ViewModels,
         // MenuItem::AddRemoveModels,
         // MenuItem::ConfigureModels,
@@ -79,6 +80,9 @@ pub async fn run_config_menu(config: &mut Config) -> Result<(), Box<dyn std::err
                     MenuItem::ViewModels => {
                         view_models::draw_view_models(&mut terminal, config)?;
                     }
+                    MenuItem::ViewProfile => {
+                        present_profile()?;
+                    }
                     // Handle other menu items here
                     _ => {}
                 },
@@ -103,7 +107,7 @@ fn menu_list_widget<'a>(
         .iter()
         .map(|item| {
             let (label, _option) = match item {
-                MenuItem::SelectMode => ("[1] Select Mode", "SelectMode"),
+                MenuItem::ViewProfile=> ("[1] View Profile", "ViewProfiles"),
                 MenuItem::ViewModels => ("[2] View Models", "ViewModels"),
                 // MenuItem::AddRemoveModels => (
                 //     "[3] Add/Remove Models",
