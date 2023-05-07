@@ -4,7 +4,8 @@ use clap::{App, Arg, SubCommand};
 
 #[tokio::main]
 async fn main() {
-    if user_profile::validation().expect("user profile validation failed") {
+    if user_profile::validate().expect("user profile validation failed") {
+        user_profile::setup().expect("User profile failed during creation");
         user_profile::welcome();
         return;
     }

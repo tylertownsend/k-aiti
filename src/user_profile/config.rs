@@ -1,3 +1,4 @@
+use crate::config::config_manager::ConfigTrait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -42,4 +43,14 @@ pub struct CreatedAccount {
 pub struct CreatedConfig {
     pub user_name: String,
     pub accounts: Vec<CreatedAccount>
+}
+
+impl ConfigTrait for Config {
+    fn config_directory() -> &'static str {
+        ".aita/configuration"
+    }
+
+    fn config_filename() -> &'static str {
+        "user_profile.json"
+    }
 }

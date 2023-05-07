@@ -1,6 +1,8 @@
 use std::error::Error;
 
 
+use crate::config::{config_manager::ConfigTrait, settings_setup};
+
 use self::config::{ Config };
 
 mod io;
@@ -8,11 +10,20 @@ mod config;
 mod setup;
 mod environment_variables;
 
-pub fn validation() -> Result<bool, Box<dyn Error>> {
-    if io::user_profile_exists() {
+pub fn validate() -> Result<bool, Box<dyn Error>> {
+    if Config::config_exists() {
         return Ok(false);
     }
+    Ok(true)
+}
 
+pub fn setup() -> Result<(), Box<dyn Error>> {
+    profile_setup()?;
+    settings_setup()?;
+    Ok(())
+}
+
+fn profile_setup() -> Result<(), Box<dyn Error>> {
     let created_profile = setup::run()?;
 
     let api_keys_to_add = created_profile.clone()
@@ -26,9 +37,9 @@ pub fn validation() -> Result<bool, Box<dyn Error>> {
         }).collect::<Vec<_>>();
 
     environment_variables::EnvironmentVariables::update(&api_keys_to_add)?;
-
-    io::write_user_settings(Config::new(created_profile))?;
-    Ok(true)
+    let config = Config::new(created_profile);
+    config.write()?;
+    Ok(())
 }
 
 pub fn welcome() {

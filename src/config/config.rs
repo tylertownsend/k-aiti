@@ -1,3 +1,4 @@
+use crate::config::config_manager::ConfigTrait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -30,4 +31,14 @@ pub struct Config {
     pub application: Application,
     pub models: Vec<Model>,
     pub modes: Modes,
+}
+
+impl ConfigTrait for Config {
+    fn config_directory() -> &'static str {
+        ".aita/configuration"
+    }
+
+    fn config_filename() -> &'static str {
+        "settings.json"
+    }
 }

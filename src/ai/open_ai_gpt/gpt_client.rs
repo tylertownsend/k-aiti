@@ -17,6 +17,12 @@ use crate::ai::chat_model::{ChatModel, ChatModelRequest};
 #[derive(Clone)]
 pub struct GptClient {
     client: Client,
+    config: GptConfig,
+}
+
+
+#[derive(Clone)]
+pub struct GptConfig {
     max_tokens: u16,
     n: u8,
     temperature: f32,
@@ -48,10 +54,12 @@ impl GptClient  {
         let client = Client::new();
         GptClient {
             client,
-            max_tokens,
-            n,
-            temperature,
-            model,
+            config: GptConfig {
+                max_tokens,
+                n,
+                temperature,
+                model,
+            }
         }
     }
 }
@@ -83,10 +91,12 @@ impl ChatModel for GptClient  {
         let client = Client::new();
         GptClient {
             client,
-            max_tokens,
-            n,
-            temperature,
-            model,
+            config: GptConfig {
+                max_tokens,
+                n,
+                temperature,
+                model,
+            }
         }
     }
 
@@ -106,11 +116,10 @@ impl ChatModel for GptClient  {
 
     async fn create_response_message(&mut self, client_request: &ChatModelRequest) -> Result<ChatCompletionResponseMessage, OpenAIError> {
         let request = CreateChatCompletionRequestArgs::default()
-            .model(self.model.to_string())
-            .n(self.n)
-            .max_tokens(self.max_tokens)
-            .temperature(self.temperature)
-            // .n(value)
+            .model(self.config.model.to_string())
+            .n(self.config.n)
+            .max_tokens(self.config.max_tokens)
+            .temperature(self.config.temperature)
             .messages(client_request.messages.clone())
             .build()?;
         Ok(self.client.chat().create(request).await?.choices[0].clone().message)
@@ -123,10 +132,10 @@ impl ChatModel for GptClient  {
         // Update the generate_response method in the GptClient implementation
 
         let request = CreateChatCompletionRequestArgs::default()
-            .model(self.model.to_string())
-            .n(self.n)
-            .max_tokens(self.max_tokens)
-            .temperature(self.temperature)
+            .model(self.config.model.to_string())
+            .n(self.config.n)
+            .max_tokens(self.config.max_tokens)
+            .temperature(self.config.temperature)
             .messages(client_request.messages.clone())
             .build()?;
 
