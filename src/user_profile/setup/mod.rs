@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{read, Event, KeyCode},
+    event::{read, Event, KeyCode, KeyEvent, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     execute,
 };
@@ -101,16 +101,23 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                 // Render intro screen
                 loop {
                     draw_intro(&mut terminal)?;
-                    if let Event::Key(event) = read()? {
-                        if event.code == KeyCode::Enter {
-                            previous_screen = current_screen;
-                            current_screen = if api_key_input != "" {
-                                Screen::DetectedAccount
-                            } else {
-                                Screen::HasAccount
-                            };
-                            break;
+                    match read()? {
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Enter => {
+                                    previous_screen = current_screen;
+                                    current_screen = if api_key_input != "" {
+                                        Screen::DetectedAccount
+                                    } else {
+                                        Screen::HasAccount
+                                    };
+                                    break;
+                                }
+                                _ => {}
+                            }
+                            _ => {}
                         }
+                        _ => {}
                     }
                 }
                 terminal.clear()?
@@ -121,36 +128,38 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                 loop {
                     draw_account_found(&mut terminal, &mut choices_list)?;
                     match read()? {
-                        Event::Key(event) => match event.code {
-                            KeyCode::Up => {
-                                choices_list.next();
-                            }
-                            KeyCode::Down => {
-                                choices_list.previous();
-                            }
-                            KeyCode::Enter => {
-                                // Proceed to the next screen based on the user's selection
-                                if let Some(selected_index) = &choices_list.state.selected() {
-                                    if choices[*selected_index] == "Yes" {
-                                        previous_screen = current_screen;
-                                        current_screen = Screen::AccountSetup;
-                                    } else {
-                                        previous_screen = current_screen;
-                                        current_screen = Screen::HasAccount;
-                                    }
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Up => {
+                                    choices_list.next();
                                 }
-                                break;
-                            }
-                            KeyCode::Char('b') | KeyCode::Char('B') => {
-                                let temp = previous_screen;
-                                previous_screen = current_screen;
-                                current_screen = temp;
-                                break;
-                            }
+                                KeyCode::Down => {
+                                    choices_list.previous();
+                                }
+                                KeyCode::Enter => {
+                                    // Proceed to the next screen based on the user's selection
+                                    if let Some(selected_index) = &choices_list.state.selected() {
+                                        if choices[*selected_index] == "Yes" {
+                                            previous_screen = current_screen;
+                                            current_screen = Screen::AccountSetup;
+                                        } else {
+                                            previous_screen = current_screen;
+                                            current_screen = Screen::HasAccount;
+                                        }
+                                    }
+                                    break;
+                                }
+                                KeyCode::Char('b') | KeyCode::Char('B') => {
+                                    let temp = previous_screen;
+                                    previous_screen = current_screen;
+                                    current_screen = temp;
+                                    break;
+                                }
+                                _ => {}
+                            },
                             _ => {}
-                        },
+                        }
                         _ => {}
-                        
                     }
                 }
                 terminal.clear()?;
@@ -163,34 +172,37 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                 loop {
                     draw_has_account_screen(&mut terminal, &mut choices_list)?;
                     match read()? {
-                        Event::Key(event) => match event.code {
-                            KeyCode::Up => {
-                                choices_list.next();
-                            }
-                            KeyCode::Down => {
-                                choices_list.previous();
-                            }
-                            KeyCode::Enter => {
-                                // Proceed to the next screen based on the user's selection
-                                if let Some(selected_index) = &choices_list.state.selected() {
-                                    if choices[*selected_index] == "Yes" {
-                                        previous_screen = current_screen;
-                                        current_screen = Screen::AccountSetup;
-                                    } else {
-                                        previous_screen = current_screen;
-                                        current_screen = Screen::NavigateToOpenAI;
-                                    }
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Up => {
+                                    choices_list.next();
                                 }
-                                break;
-                            }
-                            KeyCode::Char('b') | KeyCode::Char('B') => {
-                                let temp = previous_screen;
-                                previous_screen = current_screen;
-                                current_screen = temp;
-                                break;
-                            }
+                                KeyCode::Down => {
+                                    choices_list.previous();
+                                }
+                                KeyCode::Enter => {
+                                    // Proceed to the next screen based on the user's selection
+                                    if let Some(selected_index) = &choices_list.state.selected() {
+                                        if choices[*selected_index] == "Yes" {
+                                            previous_screen = current_screen;
+                                            current_screen = Screen::AccountSetup;
+                                        } else {
+                                            previous_screen = current_screen;
+                                            current_screen = Screen::NavigateToOpenAI;
+                                        }
+                                    }
+                                    break;
+                                }
+                                KeyCode::Char('b') | KeyCode::Char('B') => {
+                                    let temp = previous_screen;
+                                    previous_screen = current_screen;
+                                    current_screen = temp;
+                                    break;
+                                }
+                                _ => {}
+                            },
                             _ => {}
-                        },
+                        }
                         _ => {}
                     }
                 }
@@ -203,22 +215,24 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                 loop {
                     draw_create_openai_account_screen(&mut terminal)?;
                     match read()? {
-                        Event::Key(event) => match event.code {
-                            KeyCode::Char('c') | KeyCode::Char('C') => {
-                                previous_screen = current_screen;
-                                current_screen = Screen::AccountSetup;
-                                break;
-                            },
-                            KeyCode::Char('b') | KeyCode::Char('B') => {
-                                let temp = previous_screen;
-                                previous_screen = current_screen;
-                                current_screen = temp;
-                                break;
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Char('c') | KeyCode::Char('C') => {
+                                    previous_screen = current_screen;
+                                    current_screen = Screen::AccountSetup;
+                                    break;
+                                },
+                                KeyCode::Char('b') | KeyCode::Char('B') => {
+                                    let temp = previous_screen;
+                                    previous_screen = current_screen;
+                                    current_screen = temp;
+                                    break;
+                                },
+                                _ => {}
                             },
                             _ => {}
-                        },
+                        }
                         _ => {}
-                        
                     }
                 }
                 terminal.clear()?;
@@ -231,44 +245,47 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                 loop {
                     draw_enter_openai_acount_screen(&mut terminal, &mut api_key_input, &mut editing_field)?;
                     match read()? {
-                        Event::Key(event) => match event.code {
-                            KeyCode::Char('c') | KeyCode::Char('C') => {
-                                if !editing_field {
-                                    // Proceed to the next screen
-                                    previous_screen = current_screen;
-                                    current_screen = Screen::ProfileConfirmationPage;
-                                    break;
-                                } else {
-                                    editing_field = true;
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Char('c') | KeyCode::Char('C') => {
+                                    if !editing_field {
+                                        // Proceed to the next screen
+                                        previous_screen = current_screen;
+                                        current_screen = Screen::ProfileConfirmationPage;
+                                        break;
+                                    } else {
+                                        editing_field = true;
+                                    }
                                 }
-                            }
-                            KeyCode::Char('b') | KeyCode::Char('B') => {
-                                if !editing_field {
-                                    let temp = previous_screen;
-                                    previous_screen = current_screen;
-                                    current_screen = temp;
-                                    break;
-                                }
-                            },
-                            KeyCode::Backspace => {
-                                if editing_field {
-                                    api_key_input.pop();
-                                }
-                            },
-                            KeyCode::Char(c) => {
-                                if editing_field {
-                                    api_key_input.push(c);
-                                }
-                            },
-                            KeyCode::Enter => {
-                                if editing_field {
-                                    editing_field = false;
-                                } else {
-                                    editing_field = true;
-                                }
+                                KeyCode::Char('b') | KeyCode::Char('B') => {
+                                    if !editing_field {
+                                        let temp = previous_screen;
+                                        previous_screen = current_screen;
+                                        current_screen = temp;
+                                        break;
+                                    }
+                                },
+                                KeyCode::Backspace => {
+                                    if editing_field {
+                                        api_key_input.pop();
+                                    }
+                                },
+                                KeyCode::Char(c) => {
+                                    if editing_field {
+                                        api_key_input.push(c);
+                                    }
+                                },
+                                KeyCode::Enter => {
+                                    if editing_field {
+                                        editing_field = false;
+                                    } else {
+                                        editing_field = true;
+                                    }
+                                },
+                                _ => {}
                             },
                             _ => {}
-                        },
+                        }
                         _ => {}
                         
                     }
@@ -281,38 +298,40 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                 loop {
                     draw_profile_confirmation_screen(&mut terminal, api_key_input.as_str(), &mut choices_list)?;
                     match read()? {
-                        Event::Key(event) => match event.code {
-                            KeyCode::Up => {
-                                choices_list.next();
-                            }
-                            KeyCode::Down => {
-                                choices_list.previous();
-                            }
-                            KeyCode::Enter => {
-                                // Proceed to the next screen based on the user's selection
-                                if let Some(selected_index) = &choices_list.state.selected() {
-                                    if choices[*selected_index] == "Yes" {
-                                        previous_screen = current_screen;
-                                        current_screen = Screen::Disclaimer;
-                                    } else {
-                                        let temp = previous_screen;
-                                        previous_screen = current_screen;
-                                        current_screen = temp;
-                                        break;
-                                    }
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Up => {
+                                    choices_list.next();
                                 }
-                                break;
-                            }
-                            KeyCode::Char('b') | KeyCode::Char('B') => {
-                                let temp = previous_screen;
-                                previous_screen = current_screen;
-                                current_screen = temp;
-                                break;
-                            }
+                                KeyCode::Down => {
+                                    choices_list.previous();
+                                }
+                                KeyCode::Enter => {
+                                    // Proceed to the next screen based on the user's selection
+                                    if let Some(selected_index) = &choices_list.state.selected() {
+                                        if choices[*selected_index] == "Yes" {
+                                            previous_screen = current_screen;
+                                            current_screen = Screen::Disclaimer;
+                                        } else {
+                                            let temp = previous_screen;
+                                            previous_screen = current_screen;
+                                            current_screen = temp;
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                                KeyCode::Char('b') | KeyCode::Char('B') => {
+                                    let temp = previous_screen;
+                                    previous_screen = current_screen;
+                                    current_screen = temp;
+                                    break;
+                                }
+                                _ => {}
+                            },
                             _ => {}
-                        },
+                        }
                         _ => {}
-                        
                     }
                 }
                 terminal.clear()?;
@@ -321,17 +340,20 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
                 loop {
                     draw_disclaimer_screen(&mut terminal)?; 
                     match read()? {
-                        Event::Key(event) => match event.code {
-                            KeyCode::Enter => {
-                                previous_screen = current_screen;
-                                current_screen = Screen::CLIComplete;
-                                break;
-                            },
-                            KeyCode::Char('b') | KeyCode::Char('B') => {
-                                let temp = previous_screen;
-                                previous_screen = current_screen;
-                                current_screen = temp;
-                                break;
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Enter => {
+                                    previous_screen = current_screen;
+                                    current_screen = Screen::CLIComplete;
+                                    break;
+                                },
+                                KeyCode::Char('b') | KeyCode::Char('B') => {
+                                    let temp = previous_screen;
+                                    previous_screen = current_screen;
+                                    current_screen = temp;
+                                    break;
+                                },
+                                _ => {}
                             },
                             _ => {}
                         },
@@ -343,12 +365,19 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
             Screen::CLIComplete => {
                 loop {
                     draw_profile_setup_complete_screen(&mut terminal)?; 
-                    if let Event::Key(event) = read()? {
-                        if event.code == KeyCode::Enter {
-                            previous_screen = current_screen;
-                            current_screen = Screen::Done;
-                            break;
-                        }
+                    match read()? {
+                        Event::Key(event) => match event.kind {
+                            KeyEventKind::Press => match event.code {
+                                KeyCode::Enter => {
+                                    previous_screen = current_screen;
+                                    current_screen = Screen::Done;
+                                    break;
+                                }
+                                _ => {}
+                            }
+                            _ => {}
+                        },
+                        _ => {}
                     }
                 }
                 terminal.clear()?;

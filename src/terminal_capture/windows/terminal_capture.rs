@@ -1,5 +1,5 @@
 use std::process::Command;
-use crate::terminal_capture::TerminalCapture;
+use crate::terminal_capture::traits::TerminalCapture;
 
 pub struct WindowsTerminalCapture;
 

@@ -4,10 +4,11 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug aita chat",
+      "name": "Debug Chat",
       "program": "${workspaceFolder}/target/debug/aita",
       "args": [
         "chat",
@@ -17,23 +18,21 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug aita terminal capture",
+      "name": "Debug Configuration Menu",
       "program": "${workspaceFolder}/target/debug/aita",
       "args": [
-        "debug",
+        "config",
       ],
       "cwd": "${workspaceFolder}"
     },
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug modify configuration",
+      "name": "Debug Profile Setup",
       "program": "${workspaceFolder}/target/debug/aita",
-      "args": [
-        "config",
-      ],
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "sourceLanguages": ["rust"],
+      "preLaunchTask": "cargo-build"
     }
-    
   ]
 }
