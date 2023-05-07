@@ -1,4 +1,5 @@
 use std::{env, fs};
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
@@ -18,6 +19,134 @@ enum OS {
 pub struct EnvVar {
     pub name: String,
     pub value: String,
+}
+
+
+pub trait EnvironmentVariableHandler {
+    fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>>;
+    fn get(&self, name: &str) -> Result<String, Box<dyn Error>>;
+    fn update(&self, env_vars: &[EnvVar]) -> Result<(), Box<dyn Error>>;
+}
+
+pub struct WindowsEnvironmentVariableHandler;
+
+pub struct LinuxEnvironmentVariableHandler;
+
+pub struct MacOSEnvironmentVariableHandler;
+
+impl EnvironmentVariableHandler for WindowsEnvironmentVariableHandler {
+    fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
+        // Windows implementation for checking the existence of an environment variable
+        use winreg::enums::*;
+        use winreg::RegKey;
+
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let environment = hkcu.open_subkey_with_flags("Environment", KEY_READ)?;
+
+        match environment.get_value::<String, _>(name) {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
+    }
+
+    fn get(&self, name: &str) -> Result<String, Box<dyn Error>> {
+        // Windows implementation for checking the existence of an environment variable
+        use winreg::enums::*;
+        use winreg::RegKey;
+
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let environment = hkcu.open_subkey_with_flags("Environment", KEY_READ)?;
+
+        Ok(environment.get_value::<String, _>(name)?)
+    }
+
+    fn update(&self, env_vars: &[EnvVar]) -> Result<(), Box<dyn Error>> {
+        // Windows implementation for updating environment variables
+        use winreg::enums::*;
+        use winreg::RegKey;
+
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let environment = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
+
+        for env_var in env_vars {
+            environment.set_value(&env_var.name, &env_var.value)?;
+        }
+
+        // Broadcast the WM_SETTINGCHANGE message to notify other processes of the update
+        unsafe {
+            use winapi::um::winuser::{SendMessageTimeoutA, HWND_BROADCAST, SMTO_ABORTIFHUNG, WM_SETTINGCHANGE};
+            use std::ffi::CString;
+            use std::ptr;
+
+            let name_cstr = CString::new("Environment").unwrap();
+
+            SendMessageTimeoutA(
+                HWND_BROADCAST,
+                WM_SETTINGCHANGE,
+                0,
+                name_cstr.as_ptr() as _,
+                SMTO_ABORTIFHUNG,
+                5000,
+                ptr::null_mut(),
+            );
+        }
+        Ok(())
+    }
+}
+
+impl EnvironmentVariableHandler for LinuxEnvironmentVariableHandler {
+    fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
+        // Linux implementation for checking the existence of an environment variable
+        match env::var(name) {
+            Ok(key) => Ok(true),
+            Err(_) => Ok(false)
+        }
+    }
+
+    fn get(&self, name: &str) -> Result<String, Box<dyn Error>> {
+        let mut env_var = match env::var(name) {
+            Ok(key) => key,
+            Err(_) => String::new()
+        };
+        Ok(env_var)
+    }
+
+    fn update(&self, env_vars: &[EnvVar]) -> Result<(), Box<dyn Error>> {
+        // Linux implementation for updating environment variables
+        update_linux(env_vars)
+    }
+}
+
+impl EnvironmentVariableHandler for MacOSEnvironmentVariableHandler {
+    fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
+        // macOS implementation for checking the existence of an environment variable
+        match env::var(name) {
+            Ok(key) => Ok(true),
+            Err(_) => Ok(false)
+        }
+    }
+
+    fn get(&self, name: &str) -> Result<String, Box<dyn Error>> {
+        let mut env_var = match env::var(name) {
+            Ok(key) => key,
+            Err(_) => String::new()
+        };
+        Ok(env_var)
+    }
+
+    fn update(&self, env_vars: &[EnvVar]) -> Result<(), Box<dyn Error>> {
+        // macOS implementation for updating environment variables
+        update_mac(env_vars)
+    }
+}
+
+pub fn get_environment_variable_handler() -> Result<Box<dyn EnvironmentVariableHandler>, Box<dyn Error>> {
+    let os = detect_os()?;
+    match os {
+        OS::Windows => Ok(Box::new(WindowsEnvironmentVariableHandler)),
+        OS::Linux => Ok(Box::new(LinuxEnvironmentVariableHandler)),
+        OS::MacOS => Ok(Box::new(MacOSEnvironmentVariableHandler)),
+    }
 }
 
 pub struct EnvironmentVariables;
