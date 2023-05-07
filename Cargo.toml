@@ -29,6 +29,9 @@ webbrowser = "0.5"
 tempfile = "3.2.0"
 chrono = "0.4"
 async-trait = "0.1"
+winapi = { version = "0.3", features = ["winuser"] }
+winreg = "0.10.0"
+
 
 [package.metadata.deb]
 # Package metadata for the Debian package

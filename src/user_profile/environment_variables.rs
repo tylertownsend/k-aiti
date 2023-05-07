@@ -44,17 +44,35 @@ fn detect_os() -> Result<OS, Box<dyn std::error::Error>> {
 }
 
 fn update_windows(env_vars: &[EnvVar]) -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::new("cmd");
-    cmd.args(&["/C"]);
-    for var in env_vars {
-        cmd.arg(format!("setx {} {}", var.name, var.value));
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let environment = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
+
+    for env_var in env_vars {
+        environment.set_value(&env_var.name, &env_var.value)?;
     }
-    let output = cmd.output().map_err(|e| format!("Failed to execute command: {}", e))?;
-    if output.status.success() {
-        Ok(())
-    } else {
-        panic!("Problem updating environment variable: {}", output.stderr[0])
+
+    // Broadcast the WM_SETTINGCHANGE message to notify other processes of the update
+    unsafe {
+        use winapi::um::winuser::{SendMessageTimeoutA, HWND_BROADCAST, SMTO_ABORTIFHUNG, WM_SETTINGCHANGE};
+        use std::ffi::CString;
+        use std::ptr;
+
+        let name_cstr = CString::new("Environment").unwrap();
+
+        SendMessageTimeoutA(
+            HWND_BROADCAST,
+            WM_SETTINGCHANGE,
+            0,
+            name_cstr.as_ptr() as _,
+            SMTO_ABORTIFHUNG,
+            5000,
+            ptr::null_mut(),
+        );
     }
+    Ok(())
 }
 
 #[derive(Clone, PartialEq)]

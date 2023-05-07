@@ -35,6 +35,8 @@ dependencies = [
  "tokio",
  "tui",
  "webbrowser",
+ "winapi",
+ "winreg",
 ]
 
 [[package]]
