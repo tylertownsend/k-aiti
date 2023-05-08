@@ -15,7 +15,7 @@ use webbrowser;
 
 use std::{io::stdout, env};
 
-use super::config::{CreatedConfig, CreatedAccount};
+use super::{config::{CreatedConfig, CreatedAccount}, environment_variables::EnvironmentVariableHandler};
 
 #[derive(PartialEq, Eq, Hash, Clone)]
 enum Screen {
@@ -77,7 +77,7 @@ impl<T> StatefulList<T> {
 }
 
 
-pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
+pub fn run(env_var_handler: &Box<dyn EnvironmentVariableHandler>) -> Result<CreatedConfig, Box<dyn std::error::Error>> {
     let mut stdout = stdout();
     execute!(stdout, Clear(ClearType::All))?;
 
@@ -88,7 +88,7 @@ pub fn run() -> Result<CreatedConfig, Box<dyn std::error::Error>> {
     terminal.clear()?;
 
 
-    let mut api_key_input = match env::var("OPENAI_API_KEY") {
+    let mut api_key_input = match env_var_handler.get("OPENAI_API_KEY") {
         Ok(key) => key,
         Err(_) => String::new()
     };

@@ -98,13 +98,13 @@ impl EnvironmentVariableHandler for LinuxEnvironmentVariableHandler {
     fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
         // Linux implementation for checking the existence of an environment variable
         match env::var(name) {
-            Ok(key) => Ok(true),
+            Ok(_) => Ok(true),
             Err(_) => Ok(false)
         }
     }
 
     fn get(&self, name: &str) -> Result<String, Box<dyn Error>> {
-        let mut env_var = match env::var(name) {
+        let env_var = match env::var(name) {
             Ok(key) => key,
             Err(_) => String::new()
         };
@@ -121,13 +121,13 @@ impl EnvironmentVariableHandler for MacOSEnvironmentVariableHandler {
     fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
         // macOS implementation for checking the existence of an environment variable
         match env::var(name) {
-            Ok(key) => Ok(true),
+            Ok(_) => Ok(true),
             Err(_) => Ok(false)
         }
     }
 
     fn get(&self, name: &str) -> Result<String, Box<dyn Error>> {
-        let mut env_var = match env::var(name) {
+        let env_var = match env::var(name) {
             Ok(key) => key,
             Err(_) => String::new()
         };
@@ -146,19 +146,6 @@ pub fn get_environment_variable_handler() -> Result<Box<dyn EnvironmentVariableH
         OS::Windows => Ok(Box::new(WindowsEnvironmentVariableHandler)),
         OS::Linux => Ok(Box::new(LinuxEnvironmentVariableHandler)),
         OS::MacOS => Ok(Box::new(MacOSEnvironmentVariableHandler)),
-    }
-}
-
-pub struct EnvironmentVariables;
-
-impl EnvironmentVariables {
-    pub fn update(env_vars: &[EnvVar]) -> Result<(), Box<dyn std::error::Error>> {
-        let os = detect_os()?;
-        match os {
-            OS::Windows => update_windows(env_vars),
-            OS::Linux => update_linux(env_vars),
-            OS::MacOS => update_mac(env_vars)
-        }
     }
 }
 

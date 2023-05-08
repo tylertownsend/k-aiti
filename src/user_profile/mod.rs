@@ -24,7 +24,8 @@ pub fn setup() -> Result<(), Box<dyn Error>> {
 }
 
 fn profile_setup() -> Result<(), Box<dyn Error>> {
-    let created_profile = setup::run()?;
+    let env_var_handler = environment_variables::get_environment_variable_handler()?;
+    let created_profile = setup::run(&env_var_handler)?;
 
     let api_keys_to_add = created_profile.clone()
         .accounts.clone().into_iter()
@@ -36,7 +37,8 @@ fn profile_setup() -> Result<(), Box<dyn Error>> {
             }
         }).collect::<Vec<_>>();
 
-    environment_variables::EnvironmentVariables::update(&api_keys_to_add)?;
+    env_var_handler.update(&api_keys_to_add)?;
+
     let config = Config::new(created_profile);
     config.write()?;
     Ok(())
