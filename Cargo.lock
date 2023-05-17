@@ -16,7 +16,6 @@ name = "aita"
 version = "0.1.0"
 dependencies = [
  "ansi_term",
- "anyhow",
  "async-openai",
  "async-trait",
  "bytes",
@@ -56,12 +55,6 @@ checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
 dependencies = [
  "winapi",
 ]
-
-[[package]]
-name = "anyhow"
-version = "1.0.71"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c7d0618f0e0b7e8ff11427422b64564d5fb0be1940354bfe2e0529b18a9d9b8"
 
 [[package]]
 name = "async-openai"

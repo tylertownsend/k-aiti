@@ -28,12 +28,16 @@ pub trait EnvironmentVariableHandler {
     fn update(&self, env_vars: &[EnvVar]) -> Result<(), Box<dyn Error>>;
 }
 
+#[cfg(windows)]
 pub struct WindowsEnvironmentVariableHandler;
 
+#[cfg(target_os = "linux")]
 pub struct LinuxEnvironmentVariableHandler;
 
+#[cfg(target_os = "macos")]
 pub struct MacOSEnvironmentVariableHandler;
 
+#[cfg(windows)]
 impl EnvironmentVariableHandler for WindowsEnvironmentVariableHandler {
     fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
         // Windows implementation for checking the existence of an environment variable
@@ -94,6 +98,7 @@ impl EnvironmentVariableHandler for WindowsEnvironmentVariableHandler {
     }
 }
 
+#[cfg(target_os = "linux")]
 impl EnvironmentVariableHandler for LinuxEnvironmentVariableHandler {
     fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
         // Linux implementation for checking the existence of an environment variable
@@ -117,6 +122,7 @@ impl EnvironmentVariableHandler for LinuxEnvironmentVariableHandler {
     }
 }
 
+#[cfg(target_os = "macos")]
 impl EnvironmentVariableHandler for MacOSEnvironmentVariableHandler {
     fn exists(&self, name: &str) -> Result<bool, Box<dyn Error>> {
         // macOS implementation for checking the existence of an environment variable
@@ -141,54 +147,22 @@ impl EnvironmentVariableHandler for MacOSEnvironmentVariableHandler {
 }
 
 pub fn get_environment_variable_handler() -> Result<Box<dyn EnvironmentVariableHandler>, Box<dyn Error>> {
-    let os = detect_os()?;
-    match os {
-        OS::Windows => Ok(Box::new(WindowsEnvironmentVariableHandler)),
-        OS::Linux => Ok(Box::new(LinuxEnvironmentVariableHandler)),
-        OS::MacOS => Ok(Box::new(MacOSEnvironmentVariableHandler)),
+    #[cfg(windows)]
+    {
+        Ok(Box::new(WindowsEnvironmentVariableHandler))
     }
-}
-
-fn detect_os() -> Result<OS, Box<dyn std::error::Error>> {
-    let os = std::env::consts::OS;
-    match os {
-        "windows" => Ok(OS::Windows),
-        "macos" => Ok(OS::MacOS),
-        "linux" => Ok(OS::Linux),
-        _ => panic!("Unsupported OS: {}", os),
+    #[cfg(target_os = "linux")]
+    {
+        Ok(Box::new(LinuxEnvironmentVariableHandler))
     }
-}
-
-fn update_windows(env_vars: &[EnvVar]) -> Result<(), Box<dyn std::error::Error>> {
-    use winreg::enums::*;
-    use winreg::RegKey;
-
-    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-    let environment = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
-
-    for env_var in env_vars {
-        environment.set_value(&env_var.name, &env_var.value)?;
+    #[cfg(target_os = "macos")]
+    {
+        Ok(Box::new(MacOSEnvironmentVariableHandler))
     }
-
-    // Broadcast the WM_SETTINGCHANGE message to notify other processes of the update
-    unsafe {
-        use winapi::um::winuser::{SendMessageTimeoutA, HWND_BROADCAST, SMTO_ABORTIFHUNG, WM_SETTINGCHANGE};
-        use std::ffi::CString;
-        use std::ptr;
-
-        let name_cstr = CString::new("Environment").unwrap();
-
-        SendMessageTimeoutA(
-            HWND_BROADCAST,
-            WM_SETTINGCHANGE,
-            0,
-            name_cstr.as_ptr() as _,
-            SMTO_ABORTIFHUNG,
-            5000,
-            ptr::null_mut(),
-        );
+    #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
+    {
+        panic!("Unsupported OS");
     }
-    Ok(())
 }
 
 #[derive(Clone, PartialEq)]
