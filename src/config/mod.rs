@@ -1,5 +1,4 @@
 mod config;
-pub mod io;
 mod model_selectors;
 pub mod config_manager;
 
