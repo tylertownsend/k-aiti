@@ -1,11 +1,11 @@
-use crossterm::event::{self, Event as CEvent, KeyCode};
-use std::{io, error::Error, num};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use std::{io, error::Error};
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Alignment},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph, List},
+    widgets::{Block, Borders, Paragraph},
     Terminal,
 };
 
@@ -172,74 +172,77 @@ fn view_config(
         })?;
 
         match event::read()? {
-            CEvent::Key(event) => match event.code {
-                KeyCode::Char('s') | KeyCode::Char('S') => {
-                    if editing_field {
-                        let confirmed = present_confirmation(terminal)?;
-                        if confirmed {
-                            // Save changes
-                            unsaved_changes = false;
-                            for (field, value) in config_fields.iter().zip(config_widget.iter()) {
-                                config[field] = serde_json::Value::String(value.clone());
+            Event::Key(event) => match event.kind {
+                KeyEventKind::Press => match event.code {
+                    KeyCode::Char('s') | KeyCode::Char('S') => {
+                        if editing_field {
+                            let confirmed = present_confirmation(terminal)?;
+                            if confirmed {
+                                // Save changes
+                                unsaved_changes = false;
+                                for (field, value) in config_fields.iter().zip(config_widget.iter()) {
+                                    config[field] = serde_json::Value::String(value.clone());
+                                }
                             }
+                            editing_field = false;
                         }
-                        editing_field = false;
                     }
-                }
-                KeyCode::Char('c') | KeyCode::Char('C') => {
-                    if !editing_field {
+                    KeyCode::Char('c') | KeyCode::Char('C') => {
+                        if !editing_field {
+                        }
                     }
-                }
-                KeyCode::Char('b') | KeyCode::Char('B') => {
-                    if !editing_field {
-                        break;
+                    KeyCode::Char('b') | KeyCode::Char('B') => {
+                        if !editing_field {
+                            break;
+                        }
                     }
-                }
-                KeyCode::Char('e') | KeyCode::Char('E') => {
-                    if !editing_field {
-                        editing_field = !editing_field;
+                    KeyCode::Char('e') | KeyCode::Char('E') => {
+                        if !editing_field {
+                            editing_field = !editing_field;
+                        }
                     }
-                }
-                KeyCode::Char(c) => {
-                    if editing_field {
-                        unsaved_changes = true;
-                        config_widget[selected_field].push(c);
+                    KeyCode::Char(c) => {
+                        if editing_field {
+                            unsaved_changes = true;
+                            config_widget[selected_field].push(c);
+                        }
                     }
-                }
-                KeyCode::Backspace => {
-                    if editing_field {
-                        unsaved_changes = true;
-                        config_widget[selected_field].pop();
+                    KeyCode::Backspace => {
+                        if editing_field {
+                            unsaved_changes = true;
+                            config_widget[selected_field].pop();
+                        }
                     }
-                }
-                KeyCode::Esc => {
-                    if editing_field {
-                        if unsaved_changes {
-                            let abort_confirmed = present_abort_confirmation(terminal)?;
-                            if abort_confirmed {
+                    KeyCode::Esc => {
+                        if editing_field {
+                            if unsaved_changes {
+                                let abort_confirmed = present_abort_confirmation(terminal)?;
+                                if abort_confirmed {
+                                    editing_field = false;
+                                }
+                            } else {
                                 editing_field = false;
                             }
                         } else {
-                            editing_field = false;
-                        }
-                    } else {
-                        break;
-                    }
-                }
-                KeyCode::Tab => {
-                    if editing_field {
-                        selected_field = (selected_field + 1) % config_fields.len();
-                    }
-                }
-                KeyCode::BackTab => {
-                    if editing_field {
-                        if selected_field == 0 {
-                            selected_field = config_fields.len() - 1;
-                        } else {
-                            selected_field -= 1;
+                            break;
                         }
                     }
-                }
+                    KeyCode::Tab => {
+                        if editing_field {
+                            selected_field = (selected_field + 1) % config_fields.len();
+                        }
+                    }
+                    KeyCode::BackTab => {
+                        if editing_field {
+                            if selected_field == 0 {
+                                selected_field = config_fields.len() - 1;
+                            } else {
+                                selected_field -= 1;
+                            }
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
             },
             _ => {}
@@ -267,14 +270,17 @@ fn present_confirmation(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -
         })?;
 
         match event::read()? {
-            CEvent::Key(event) => match event.code {
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    confirmed = true;
-                    break;
-                }
-                KeyCode::Char('n') | KeyCode::Char('N') => {
-                    break;
-                }
+            Event::Key(event) => match event.kind {
+                KeyEventKind::Press => match event.code {
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        confirmed = true;
+                        break;
+                    }
+                    KeyCode::Char('n') | KeyCode::Char('N') => {
+                        break;
+                    }
+                    _ => {}
+                },
                 _ => {}
             },
             _ => {}
@@ -307,14 +313,17 @@ fn present_abort_confirmation(
         })?;
 
         match event::read()? {
-            CEvent::Key(event) => match event.code {
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    confirmed = true;
-                    break;
-                }
-                KeyCode::Char('n') | KeyCode::Char('N') => {
-                    break;
-                }
+            Event::Key(event) => match event.kind {
+                KeyEventKind::Press => match event.code {
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        confirmed = true;
+                        break;
+                    }
+                    KeyCode::Char('n') | KeyCode::Char('N') => {
+                        break;
+                    }
+                    _ => {}
+                },
                 _ => {}
             },
             _ => {}
