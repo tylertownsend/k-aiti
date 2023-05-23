@@ -1,6 +1,6 @@
 use std::io;
 use crossterm::{
-    event::{self, Event as CEvent, KeyCode},
+    event::{self, Event, KeyCode, KeyEventKind},
 };
 use tui::{
     backend::CrosstermBackend,
@@ -83,63 +83,66 @@ pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c
         })?;
 
         match event::read()? {
-            CEvent::Key(event) => match event.code {
-                KeyCode::Left | KeyCode::Right => {
-                    // active_panel = 1 - active_panel;
-                }
-                KeyCode::Up => {
-                    if active_panel == 0 {
-                        models_list.previous();
-                    } else {
-                        actions_list.previous();
+            Event::Key(event) => match event.kind {
+                KeyEventKind::Press => match event.code {
+                    KeyCode::Left | KeyCode::Right => {
+                        // active_panel = 1 - active_panel;
                     }
-                }
-                KeyCode::Down => {
-                    if active_panel == 0 {
-                        models_list.next();
-                    } else {
-                        actions_list.next();
-                    }
-                }
-                KeyCode::Char('v') | KeyCode::Char('V') => {
-                    // View logic
-                    if let Some(selected_index) = models_list.state.selected() {
-                        if let Some(selected_model) = config.models.get_mut(selected_index) {
-                            view_model::view(terminal, selected_model)?;
+                    KeyCode::Up => {
+                        if active_panel == 0 {
+                            models_list.previous();
+                        } else {
+                            actions_list.previous();
                         }
                     }
-                }
-                KeyCode::Enter => {
-                    // Enter automatically view/edits the model
-                    if let Some(selected_index) = models_list.state.selected() {
-                        if let Some(selected_model) = config.models.get_mut(selected_index) {
-                            view_model::view(terminal, selected_model)?;
+                    KeyCode::Down => {
+                        if active_panel == 0 {
+                            models_list.next();
+                        } else {
+                            actions_list.next();
                         }
                     }
-                }
-                KeyCode::Char('a') | KeyCode::Char('A') => {
-                    // Add logic
-                }
-                KeyCode::Char('r') | KeyCode::Char('R') => {
-                    // Remove logic
-                }
-                KeyCode::Char('e') | KeyCode::Char('E') => {
-                    // Edit logic
-                }
-                KeyCode::Char('b') | KeyCode::Char('B') => {
-                    // Go back to the previous screen
-                    // disable_raw_mode()?;
-                    break;
-                }
-                KeyCode::Esc => {
-                    // disable_raw_mode()?;
-                    break;
-                }
-                _ => {}
-            },
-            _ => {
+                    KeyCode::Char('v') | KeyCode::Char('V') => {
+                        // View logic
+                        if let Some(selected_index) = models_list.state.selected() {
+                            if let Some(selected_model) = config.models.get_mut(selected_index) {
+                                view_model::view(terminal, selected_model)?;
+                            }
+                        }
+                    }
+                    KeyCode::Enter => {
+                        // Enter automatically view/edits the model
+                        if let Some(selected_index) = models_list.state.selected() {
+                            if let Some(selected_model) = config.models.get_mut(selected_index) {
+                                view_model::view(terminal, selected_model)?;
+                            }
+                        }
+                    }
+                    KeyCode::Char('a') | KeyCode::Char('A') => {
+                        // Add logic
+                    }
+                    KeyCode::Char('r') | KeyCode::Char('R') => {
+                        // Remove logic
+                    }
+                    KeyCode::Char('e') | KeyCode::Char('E') => {
+                        // Edit logic
+                    }
+                    KeyCode::Char('b') | KeyCode::Char('B') => {
+                        // Go back to the previous screen
+                        // disable_raw_mode()?;
+                        break;
+                    }
+                    KeyCode::Esc => {
+                        // disable_raw_mode()?;
+                        break;
+                    }
+                    _ => {}
+                },
+                _ => {
 
-            }
+                }
+            },
+            _ => {}
         }
     }
     terminal.clear()?;

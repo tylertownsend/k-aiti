@@ -1,6 +1,6 @@
 use std::io;
 use crossterm::{
-    event::{self, Event as CEvent, KeyCode},
+    event::{self, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 use tui::{
@@ -59,30 +59,33 @@ pub async fn run_config_menu(config: &mut Config) -> Result<(), Box<dyn std::err
         })?;
 
         match event::read()? {
-            CEvent::Key(event) => match event.code {
-                KeyCode::Up => {
-                    if selected_item > 0 {
-                        selected_item -= 1;
+            Event::Key(event) => match event.kind {
+                KeyEventKind::Press => match event.code {
+                    KeyCode::Up => {
+                        if selected_item > 0 {
+                            selected_item -= 1;
+                        }
+                        // models_list.next();
                     }
-                    // models_list.next();
-                }
-                KeyCode::Down => {
-                    if selected_item < menu_items.len() - 1 {
-                        selected_item += 1;
+                    KeyCode::Down => {
+                        if selected_item < menu_items.len() - 1 {
+                            selected_item += 1;
+                        }
                     }
-                }
-                KeyCode::Char('q') | KeyCode::Char('Q') => {
-                    running = false;
-                }
-                KeyCode::Enter => match menu_items[selected_item] {
-                    MenuItem::Quit => running = false,
-                    MenuItem::ViewModels => {
-                        view_models::draw_view_models(&mut terminal, config)?;
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        running = false;
                     }
-                    // Handle other menu items here
+                    KeyCode::Enter => match menu_items[selected_item] {
+                        MenuItem::Quit => running = false,
+                        MenuItem::ViewModels => {
+                            view_models::draw_view_models(&mut terminal, config)?;
+                        }
+                        // Handle other menu items here
+                        _ => {}
+                    },
+                    KeyCode::Esc => running = false,
                     _ => {}
                 },
-                KeyCode::Esc => running = false,
                 _ => {}
             },
             _ => {}

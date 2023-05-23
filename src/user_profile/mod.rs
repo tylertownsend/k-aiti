@@ -5,7 +5,6 @@ use crate::config::{config_manager::ConfigTrait, settings_setup};
 
 use self::config::{ Config };
 
-mod io;
 mod config;
 mod setup;
 mod environment_variables;
