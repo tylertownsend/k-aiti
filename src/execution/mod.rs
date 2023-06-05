@@ -1,4 +1,5 @@
 use clap::ArgMatches;
+use crate::config::config_manager::ConfigTrait;
 
 pub mod chat_mode;
 pub mod debug_mode;
@@ -26,7 +27,7 @@ pub async fn process_command(matches: ArgMatches) {
         // } else {
         //     Vec::new()
         // };
-        let config = match crate::config::io::read_user_settings() {
+        let config = match crate::config::Config::read() {
             Ok(path) => path,
             Err(error) => {
                 panic!("{}", error);
@@ -48,18 +49,15 @@ pub async fn process_command(matches: ArgMatches) {
         //     .and_then(|mut file| file.write_all(chat_history.join(STOP_PHRASE).as_bytes()))
         //     .expect("Failed to save chat history");
     } else if let Some(_) = matches.subcommand_matches("config") {
-        let mut config = match crate::config::io::read_user_settings() {
-            Ok(path) => path,
-            Err(error) => {
-                println!("{}", error);
-                panic!("Could not find the users settings file! Abort");
-            }
+        let mut config= match crate::config::Config::read() {
+            Ok(instance) => instance,
+            Err(error) => panic!("Error reading configuration!"),
         };
         match config_menu::run_config_menu(&mut config).await {
             Ok(()) => println!("Configuration menu closed successfully"),
             Err(e) => eprintln!("Error running configuration menu: {}", e),
         }
-        match crate::config::io::write_user_settings(config) {
+        match config.write() {
             Ok(()) => println!("Configuration updates written successfully"),
             Err(_) => eprintln!("Error updating configuration settings")
         }
