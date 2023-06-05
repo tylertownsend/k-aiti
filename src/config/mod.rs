@@ -28,7 +28,7 @@ pub fn settings_setup() -> Result<(), Box<dyn Error>> {
     let config = Config {
         application: {
             Application { 
-                name: String::from("aita"), 
+                name: String::from("k-aiti"), 
                 version: String::from("0.0.1")
             }
         },

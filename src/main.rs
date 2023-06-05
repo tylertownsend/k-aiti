@@ -1,5 +1,5 @@
-use aita::execution;
-use aita::user_profile;
+use k_aiti::execution;
+use k_aiti::user_profile;
 use clap::{App, Arg, SubCommand};
 
 #[tokio::main]
@@ -9,7 +9,7 @@ async fn main() {
         user_profile::welcome();
         return;
     }
-    let matches = App::new("aita")
+    let matches = App::new("k-aiti")
         .version("0.1.0")
         .author("Tyler Townsend")
         .about("A smart terminal-based assistant to help engineers resolve errors and find relevant information")

@@ -35,7 +35,7 @@ pub struct Config {
 
 impl ConfigTrait for Config {
     fn config_directory() -> &'static str {
-        ".aita/configuration"
+        ".k-aiti/configuration"
     }
 
     fn config_filename() -> &'static str {

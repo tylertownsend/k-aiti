@@ -9,7 +9,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug Chat",
-      "program": "${workspaceFolder}/target/debug/aita",
+      "program": "${workspaceFolder}/target/debug/k-aiti",
       "args": [
         "chat",
       ],
@@ -19,7 +19,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug Configuration Menu",
-      "program": "${workspaceFolder}/target/debug/aita",
+      "program": "${workspaceFolder}/target/debug/k-aiti",
       "args": [
         "config",
       ],
@@ -29,7 +29,7 @@
       "type": "lldb",
       "request": "launch",
       "name": "Debug Profile Setup",
-      "program": "${workspaceFolder}/target/debug/aita",
+      "program": "${workspaceFolder}/target/debug/k-aiti",
       "cwd": "${workspaceFolder}",
       "sourceLanguages": ["rust"],
       "preLaunchTask": "cargo-build"

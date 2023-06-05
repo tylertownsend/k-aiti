@@ -12,33 +12,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aita"
-version = "0.1.0"
-dependencies = [
- "ansi_term",
- "async-openai",
- "async-trait",
- "bytes",
- "chrono",
- "clap",
- "crossterm 0.26.1",
- "dirs",
- "futures",
- "hyper",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "tempfile",
- "termimad",
- "tokio",
- "tui",
- "webbrowser",
- "winapi",
- "winreg",
-]
-
-[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -882,6 +855,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "445dde2150c55e483f3d8416706b97ec8e8237c307e5b7b4b8dd15e6af2a0730"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "k-aiti"
+version = "0.1.0"
+dependencies = [
+ "ansi_term",
+ "async-openai",
+ "async-trait",
+ "bytes",
+ "chrono",
+ "clap",
+ "crossterm 0.26.1",
+ "dirs",
+ "futures",
+ "hyper",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "termimad",
+ "tokio",
+ "tui",
+ "webbrowser",
+ "winapi",
+ "winreg",
 ]
 
 [[package]]
