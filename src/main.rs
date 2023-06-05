@@ -9,7 +9,7 @@ async fn main() {
         user_profile::welcome();
         return;
     }
-    let matches = App::new("k-aiti")
+    let matches = App::new("kaiti")
         .version("0.1.0")
         .author("Tyler Townsend")
         .about("A smart terminal-based assistant to help engineers resolve errors and find relevant information")
@@ -35,7 +35,7 @@ async fn main() {
                         .takes_value(true),
                 ),
         )
-        .subcommand(SubCommand::with_name("chat").about("Enter chat mode with the GPT API"))
+        .subcommand(SubCommand::with_name("chat").about("Chat with an AI"))
         .subcommand(SubCommand::with_name("config")
             .about("Configure your cli environment"))
             .aliases(&["configure", "config"])

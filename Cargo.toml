@@ -6,6 +6,10 @@ license = "MIT"
 description = "Experimental CLI for working with an intelligent terminal assitant"
 edition = "2021"
 
+[[bin]]
+name = "kaiti"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
