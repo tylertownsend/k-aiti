@@ -243,7 +243,7 @@ pub fn run(env_var_handler: &Box<dyn EnvironmentVariableHandler>) -> Result<Crea
                 // Render intro screen
                 let mut editing_field: bool = false;
                 loop {
-                    draw_enter_openai_acount_screen(&mut terminal, &mut api_key_input, &mut editing_field)?;
+                    draw_enter_openai_account_screen(&mut terminal, &mut api_key_input, &mut editing_field)?;
                     match read()? {
                         Event::Key(event) => match event.kind {
                             KeyEventKind::Press => match event.code {
@@ -408,27 +408,32 @@ pub fn run(env_var_handler: &Box<dyn EnvironmentVariableHandler>) -> Result<Crea
 pub fn draw_intro(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<(), Box<dyn std::error::Error>> {
     terminal.draw(|f| {
         let size = f.size();
-        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Profile Setup");
-        f.render_widget(block, size);
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .margin(2)
+            .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3),
-                    Constraint::Min(1),
-                    Constraint::Length(3),
+                    Constraint::Length(3), // title block
+                    Constraint::Percentage(100), // rest for content
                 ]
                 .as_ref(),
             )
             .split(size);
 
+        // Title block
+        let block = Block::default().title("OpenAI CLI - Profile Setup")
+            .borders(Borders::ALL);
+        f.render_widget(block, chunks[0]);
+
         let intro_text = "Welcome to the OpenAI CLI setup!\nFollow the instructions to configure your user profile.";
         let intro = Paragraph::new(intro_text)
             .style(Style::default().fg(Color::White))
             .alignment(Alignment::Center)
-            .block(Block::default().title(Span::styled("Introduction", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))));
+            .block(Block::default()
+                .borders(Borders::ALL)
+                .title(Span::styled("Introduction", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)))
+            );
         f.render_widget(intro, chunks[1]);
     })?;
 
@@ -441,49 +446,79 @@ fn draw_account_found(
 ) -> Result<(), Box<dyn std::error::Error>> {
     terminal.draw(|f| {
         let size = f.size();
-        let block = Block::default().borders(Borders::ALL).title("OpenAI CLI - Account Detection");
-        f.render_widget(block, size);
 
+        // Define the layout constraints
+        let constraints = [
+            Constraint::Length(3), // Title block
+            Constraint::Percentage(80), // Content block (will be split into three)
+            Constraint::Length(3), // Action block
+        ];
+
+        // Create layout
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .margin(2)
-            .constraints(
-                [
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                ]
-                .as_ref(),
-            )
+            .margin(1)
+            .constraints(constraints.as_ref())
             .split(size);
+
+        // Create title block
+        let block = Block::default().title("OpenAI CLI - Profile Setup").borders(Borders::ALL);
+        f.render_widget(block, chunks[0]);
+
+        // Contennt Block
+        let block = Block::default().title("Account Detection").borders(Borders::ALL);
+        f.render_widget(block, chunks[1]);
+
+        // Create content blocks
+        let content_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints([
+                Constraint::Percentage(30),  // Adjust these percentages to
+                Constraint::Length(2),  // control distance between blocks
+                Constraint::Percentage(50)   // 'detected_prompt', 'use_api_key_prompt', 'choices_widget'
+            ].as_ref())
+            .split(chunks[1]);
+            // et chunks = Layout::default()
+            // .direction(Direction::Vertical)
+            // .margin(2)
+            // .constraints(
+            //     [
+            //         Constraint::Length(3),
+            //         Constraint::Length(3),
+            //         Constraint::Length(3),
+            //         Constraint::Length(3),
+            //     ]
+            //     .as_ref(),
+            // )
+            // .split(size);
 
         let detected_prompt = Paragraph::new("We have detected environment variable OPENAI_API_KEY in your system.")
             .style(Style::default().fg(Color::White))
-            .alignment(Alignment::Left);
-        f.render_widget(detected_prompt, chunks[0]);
+            .alignment(Alignment::Center);
+        f.render_widget(detected_prompt, content_chunks[0]);
 
         let use_api_key_prompt = Paragraph::new("Would you like to use this as part of your openai account?")
             .style(Style::default().fg(Color::White))
             .alignment(Alignment::Left);
-        f.render_widget(use_api_key_prompt, chunks[1]);
+        f.render_widget(use_api_key_prompt, content_chunks[1]);
 
         let choices_widget = List::new(choices_list.items.clone())
             .block(Block::default().borders(Borders::NONE))
             .style(Style::default().fg(Color::White))
             .highlight_style(Style::default().bg(Color::DarkGray).fg(Color::White))
             .highlight_symbol("> ");
-        f.render_stateful_widget(choices_widget, chunks[2], &mut choices_list.state);
+        f.render_stateful_widget(choices_widget, content_chunks[2], &mut choices_list.state);
 
+        // Create action block
         let action_text = "[Enter] Select [B] Back";
         let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
         let action_block = Block::default().title(action_span).borders(Borders::ALL);
-        f.render_widget(action_block, chunks[3]);
+        f.render_widget(action_block, chunks[2]);
     })?;
 
     Ok(())
 }
-
 fn draw_has_account_screen(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
     choices_list: &mut StatefulList<ListItem>,
@@ -533,40 +568,61 @@ fn draw_has_account_screen(
 
     Ok(())
 }
-fn draw_enter_openai_acount_screen(
+
+fn draw_enter_openai_account_screen (
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
     api_key: &str,
     editing_field: &mut bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     terminal.draw(|f| {
         let size = f.size();
-        let title = "OpenAI CLI - Profile Setup";
-            let title_span = Span::styled(
-                title,
-                Style::default()
-                    .fg(Color::White)
-                    .add_modifier(Modifier::BOLD),
-            );
-            let title_block = Block::default().title(title_span).borders(Borders::ALL);
-            f.render_widget(title_block, size);
 
+        // Define the layout constraints
+        let constraints = [
+            Constraint::Length(3), // Title block
+            Constraint::Percentage(80), // Content block (will be split into three)
+            Constraint::Length(3), // Action block
+        ];
+
+        // Create layout
         let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(1)
+            .constraints(constraints.as_ref())
+            .split(size);
+
+        // Title block
+        let title = "OpenAI CLI - Profile Setup";
+        let title_span = Span::styled(
+            title,
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        );
+        let title_block = Block::default().title(title_span).borders(Borders::ALL);
+        f.render_widget(title_block, chunks[0]);
+
+        // Contennt Block
+        let block = Block::default().title("API Key Information").borders(Borders::ALL);
+        f.render_widget(block, chunks[1]);
+
+        let content_chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
             .constraints(
                 [
-                    Constraint::Length(1),
+                    Constraint::Length(2),
                     Constraint::Length(3),
-                    Constraint::Length(3)
+                    Constraint::Length(3) // use to fill up remaining space in the content chunk
                 ]
                 .as_ref(),
             )
-            .split(size);
+            .split(chunks[1]);
 
         let api_key_prompt = Paragraph::new("Enter your OpenAI API key:")
             .style(Style::default().fg(Color::White))
             .alignment(Alignment::Left);
-        f.render_widget(api_key_prompt, chunks[0]);
+        f.render_widget(api_key_prompt, content_chunks[0]);
 
         let api_key_style = if *editing_field {
             Style::default().fg(Color::Yellow).bg(Color::DarkGray)
@@ -588,8 +644,9 @@ fn draw_enter_openai_acount_screen(
             .style(api_key_style)
             .block(input_block)
             .alignment(Alignment::Left);
-        f.render_widget(api_key_input, chunks[1]);
+        f.render_widget(api_key_input, content_chunks[1]);
 
+        // Actions block
         let action_text = "[B] Back";
         let action_span = Span::styled(action_text, Style::default().fg(Color::LightGreen));
         let action_block = Block::default().title(action_span).borders(Borders::ALL);
