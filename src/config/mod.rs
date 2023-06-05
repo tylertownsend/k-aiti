@@ -3,7 +3,6 @@ pub mod io;
 mod model_selectors;
 pub mod config_manager;
 
-use core::panic;
 use std::{error::Error, vec};
 
 pub use config::{ Application, Config, Mode, Model };

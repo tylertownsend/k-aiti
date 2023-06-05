@@ -2,7 +2,7 @@ use std::{error::Error, pin::Pin};
 
 use async_trait::async_trait;
 
-use futures::{stream::{StreamExt, iter}, Stream};
+use futures::Stream;
 
 #[async_trait]
 pub trait ChatDataStream {

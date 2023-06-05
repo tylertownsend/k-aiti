@@ -1,11 +1,11 @@
 use crossterm::event::{self, Event as CEvent, KeyCode};
-use std::{io, error::Error, num};
+use std::{io, error::Error};
 use tui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout, Alignment},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph, List},
+    widgets::{Block, Borders, Paragraph},
     Terminal,
 };
 

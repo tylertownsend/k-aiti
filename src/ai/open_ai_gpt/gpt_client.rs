@@ -106,22 +106,58 @@ impl ChatModel for GptClient  {
     fn new(config: serde_json::Value) -> GptClient {
         
         let max_tokens = match config.get("max_tokens") {
-            Some(value) => value.as_u64().unwrap_or(0) as u16,
+            Some(value) => if value.is_u64() {
+                value.as_u64().unwrap_or(1000) as u16
+            } else if value.is_string() {
+                match value.as_str().unwrap().parse::<u16>() {
+                    Ok(val) => val,
+                    Err(_) => {
+                        println!("Failed to parse max_tokens as u16");
+                        1000
+                    },
+                }
+            } else {
+                1000
+            },
             None => 1000,
         };
         
         let n = match config.get("n") {
-            Some(value) => value.as_u64().unwrap_or(0) as u8,
+            Some(value) => if value.is_u64() {
+                value.as_u64().unwrap_or(1) as u8
+            } else if value.is_string() {
+                match value.as_str().unwrap().parse::<u8>() {
+                    Ok(val) => val,
+                    Err(_) => {
+                        println!("Failed to parse n as u8");
+                        1
+                    },
+                }
+            } else {
+                1
+            },
             None => 1,
         };
         
         let temperature = match config.get("temperature") {
-            Some(value) => value.as_f64().unwrap_or(0.0) as f32,
+            Some(value) => if value.is_f64() {
+                value.as_f64().unwrap_or(0.8) as f32
+            } else if value.is_string() {
+                match value.as_str().unwrap().parse::<f32>() {
+                    Ok(val) => val,
+                    Err(_) => {
+                        println!("Failed to parse temperature as f32");
+                        0.8
+                    },
+                }
+            } else {
+                0.8
+            },
             None => 0.8,
         };
         
         let model = match config.get("model") {
-            Some(value) => value.as_str().unwrap_or("").to_string(),
+            Some(value) => value.as_str().unwrap_or("gpt-3.5-turbo").to_string(),
             None => String::from("gpt-3.5-turbo"),
         };
         let client = Client::new();
@@ -166,7 +202,6 @@ impl ChatModel for GptClient  {
         client_request: &ChatModelRequest,
     ) -> Result<ChatCompletionResponseStream, OpenAIError> {
         // Update the generate_response method in the GptClient implementation
-
         let request = CreateChatCompletionRequestArgs::default()
             .model(self.config.model.to_string())
             .n(self.config.n)
@@ -175,6 +210,19 @@ impl ChatModel for GptClient  {
             .messages(client_request.messages.clone())
             .build()?;
 
-       Ok(self.client.chat().create_stream(request).await?)
+        let stream = self.client.chat().create_stream(request).await?;
+
+        // let client = Client::new();
+        // let request = CreateChatCompletionRequestArgs::default()
+        //     .model("gpt-3.5-turbo")
+        //     .max_tokens(1024u16)
+        //     .messages([ChatCompletionRequestMessageArgs::default()
+        //         .content("hello")
+        //         .role(Role::User)
+        //         .build()?])
+        //     .build()?;
+
+        // let stream = client.chat().create_stream(request).await?;
+        Ok(stream)
     }
 }

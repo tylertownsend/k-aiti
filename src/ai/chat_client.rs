@@ -31,7 +31,13 @@ impl ChatClient {
         self.chat_log.push(user_message);
         let client_request = ChatModelRequest{ messages: self.chat_log.clone() };
 
-        let mut stream = self.chat_model.create_response_stream(&client_request).await?;
+        let mut stream = match self.chat_model.create_response_stream(&client_request).await {
+            Ok(result) => result,
+            Err(e) => {
+                println!("{}", e.to_string());
+                panic!("Unable to create stream")
+            }
+        };
         renderer.print_entity("AI ", Color::Green);
         while let Some(result) = stream.next().await {
             match result {

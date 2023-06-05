@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{read, Event, KeyCode, KeyEvent, KeyEventKind},
+    event::{read, Event, KeyCode, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     execute,
 };
@@ -13,7 +13,7 @@ use tui::{
 };
 use webbrowser;
 
-use std::{io::stdout, env};
+use std::io::stdout;
 
 use super::{config::{CreatedConfig, CreatedAccount}, environment_variables::EnvironmentVariableHandler};
 

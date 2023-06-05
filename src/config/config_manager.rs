@@ -1,7 +1,7 @@
 // src/config_manager.rs
 use std::fs;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::error::Error;
 
 pub trait ConfigTrait: serde::Serialize + serde::de::DeserializeOwned {

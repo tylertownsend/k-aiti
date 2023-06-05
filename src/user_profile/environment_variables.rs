@@ -9,13 +9,6 @@ use std::io::Write;
 use dirs::home_dir;
 
 #[derive(Debug)]
-enum OS {
-    Windows,
-    MacOS,
-    Linux,
-}
-
-#[derive(Debug)]
 pub struct EnvVar {
     pub name: String,
     pub value: String,
