@@ -1,6 +1,7 @@
+use clap::{App, Arg, SubCommand};
+
 use k_aiti::execution;
 use k_aiti::user_profile;
-use clap::{App, Arg, SubCommand};
 
 #[tokio::main]
 async fn main() {
@@ -9,6 +10,7 @@ async fn main() {
         user_profile::welcome();
         return;
     }
+
     let matches = App::new("kaiti")
         .version("0.1.0")
         .author("Tyler Townsend")
