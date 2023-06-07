@@ -11,6 +11,8 @@ use tui::{
 
 use crate::config::Model;
 
+use super::stateful_list::StatefulList;
+
 pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c_model: &mut Model) -> Result<(), Box<dyn Error>> {
     let required_config = ModelRequiredConfig{
         id: c_model.id.to_string(),
@@ -76,7 +78,7 @@ fn view_config(
             Event::Key(event) => match event.kind {
                 KeyEventKind::Press => match event.code {
                     KeyCode::Char('s') | KeyCode::Char('S') => {
-                        if state.editing_field {
+                        if state.unsaved_changes {
                             let confirmed = present_confirmation(terminal)?;
                             if confirmed {
                                 // Save changes
@@ -85,7 +87,6 @@ fn view_config(
                                     config[field] = serde_json::Value::String(value.clone());
                                 }
                             }
-                            state.editing_field = false;
                         }
                     }
                     KeyCode::Char('c') | KeyCode::Char('C') => {
@@ -94,7 +95,16 @@ fn view_config(
                     }
                     KeyCode::Char('b') | KeyCode::Char('B') => {
                         if !state.editing_field {
-                            break;
+                            if state.unsaved_changes {
+                                let abort_confirmed = present_abort_confirmation(terminal)?;
+                                if abort_confirmed {
+                                    state.editing_field = false;
+                                    break;
+                                }
+                            } else {
+                                state.editing_field = false;
+                                break;
+                            }
                         }
                     }
                     KeyCode::Char('e') | KeyCode::Char('E') => {
@@ -116,16 +126,17 @@ fn view_config(
                     }
                     KeyCode::Esc => {
                         if state.editing_field {
+                            state.editing_field = false;
+                        } else {
                             if state.unsaved_changes {
                                 let abort_confirmed = present_abort_confirmation(terminal)?;
                                 if abort_confirmed {
-                                    state.editing_field = false;
+                                    // don't save changes
+                                    break;
                                 }
                             } else {
-                                state.editing_field = false;
+                                break;
                             }
-                        } else {
-                            break;
                         }
                     }
                     KeyCode::Tab => {
@@ -188,27 +199,27 @@ fn present_menu(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, state: &m
             .split(chunks[1]);
 
         // Actions on left
-        let action_text = if state.editing_field {
-            "[S] Save [ESC] Stop Editing [B] Back"
+        let actions = if state.editing_field {
+            vec![
+                "[ESC] Stop Editing",
+            ]
+        } else if state.unsaved_changes {
+            vec![
+                "[E] Edit",
+                "[B] Back",
+                "[S] Save",
+            ]
         } else {
-            "[E] Edit [B] Back"
+            vec![
+                "[E] Edit",
+                "[B] Back",
+            ]
         };
-        let action_span = Span::styled(action_text, Style::default().fg(Color::White));
-        let action_block = Block::default().title(action_span).borders(Borders::ALL);
-        let action_paragraph_text = if state.editing_field {
-            "Editing"
-        } else {
-            ""
-        };
-        let action_paragraph_text_color = if state.editing_field {
-            Color::Yellow
-        } else {
-            Color::White
-        };
-        let action_paragraph = Paragraph::new(action_paragraph_text)
-            .style(Style::default().fg(action_paragraph_text_color))
-            .block(action_block);
-        frame.render_widget(action_paragraph, h_chunks[0]);
+        let actions_list = StatefulList::new(actions.into_iter().map(ListItem::new).collect::<Vec<_>>());
+        let actions_widget = List::new(actions_list.items.clone())
+                .block(Block::default().title("Actions").borders(Borders::ALL))
+                .style(Style::default().fg(Color::White));
+        frame.render_widget(actions_widget, h_chunks[0]);
 
         // Further split right side vertically
         let v_chunks = Layout::default()
