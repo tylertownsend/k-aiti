@@ -1,0 +1,47 @@
+name: Build and release
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+      asset_name:
+        required: true
+        type: string
+    secrets:
+      token:
+        required: true
+
+jobs:
+  build-and-release:
+    runs-on: ${{ inputs.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Build
+      run: |
+        rustup target add ${{ inputs.target }}
+        cargo build --release --target=${{ inputs.target }}
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.token }}
+      with:
+        upload_url: ${{ github.event.inputs.upload_url }}
+        asset_path: ./target/${{ inputs.target }}/release/${{ inputs.asset_name }}
+        asset_name: ${{ inputs.asset_name }}
+        asset_content_type: application/octet-stream
