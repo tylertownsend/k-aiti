@@ -1,0 +1,44 @@
+name: Release Linux
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "main" ] # this is specifically for testing
+
+jobs:
+  call-build-and-release:
+    uses: ./.github/workflows/build-and-release.yml
+    with:
+      os: ubuntu-latest
+      target: x86_64-unknown-linux-gnu
+      asset_name: kaiti
+      token: ${{ secrets.GITHUB_TOKEN }}
+  
+  create-deb-package:
+    needs: call-build-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install cargo-deb
+        run: |
+          cargo install cargo-deb
+
+      - name: Build DEB Package
+        run: |
+          cargo deb --target=x86_64-unknown-linux-gnu
+
+      # - name: Upload DEB Package as artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: your-program-name-deb
+      #     path: target/debian/kaiti_*.deb
