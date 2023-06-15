@@ -16,7 +16,7 @@ jobs:
       asset_name: kaiti
   
   create-deb-package:
-    needs: call-build-and-release
+    # needs: call-build-and-release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -40,4 +40,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: your-program-name-deb
-          path: target/debian/kaiti_*.deb
+          path: target/x86_64-unknown-linux-gnu/debian/kaiti_*.deb
