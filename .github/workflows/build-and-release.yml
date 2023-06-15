@@ -12,9 +12,6 @@ on:
       asset_name:
         required: true
         type: string
-    secrets:
-      token:
-        required: true
 
 jobs:
   build-and-release:
@@ -39,7 +36,7 @@ jobs:
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.token }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.inputs.upload_url }}
         asset_path: ./target/${{ inputs.target }}/release/${{ inputs.asset_name }}
