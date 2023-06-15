@@ -40,4 +40,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: your-program-name-deb
-          path: ${{ github.workspace }}/k-aiti/target/x86_64-unknown-linux-gnu/debian/kaiti_*.deb
+          path: ${{ github.workspace }}/k-aiti/target/x86_64-unknown-linux-gnu/debian/k-aiti_*.deb
+
