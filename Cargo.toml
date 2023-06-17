@@ -3,7 +3,7 @@ name = "k-aiti"
 version = "0.1.0"
 authors = ["Tyler Townsend"]
 license = "MIT"
-description = "Experimental CLI for working with an intelligent terminal assitant"
+description = "Terminal interface for working with artificial intelligent systems."
 edition = "2021"
 
 [[bin]]
