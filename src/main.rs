@@ -6,9 +6,12 @@ use k_aiti::user_profile;
 #[tokio::main]
 async fn main() {
     if user_profile::validate().expect("user profile validation failed") {
-        user_profile::setup().expect("User profile failed during creation");
-        user_profile::welcome();
-        return;
+        let result = user_profile::setup().expect("User profile failed during creation");
+        if result.abort {
+            user_profile::abort_message();
+            return
+        }
+        user_profile::welcome_message();
     }
 
     let matches = App::new("kaiti")

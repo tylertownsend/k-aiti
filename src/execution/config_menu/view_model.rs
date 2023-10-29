@@ -77,45 +77,42 @@ fn view_config(
         match event::read()? {
             Event::Key(event) => match event.kind {
                 KeyEventKind::Press => match event.code {
-                    KeyCode::Char('s') | KeyCode::Char('S') => {
-                        if state.unsaved_changes {
-                            let confirmed = present_confirmation(terminal)?;
-                            if confirmed {
-                                // Save changes
-                                state.unsaved_changes = false;
-                                for (field, value) in state.config_fields.iter().zip(state.config_widgets.iter()) {
-                                    config[field] = serde_json::Value::String(value.clone());
-                                }
-                            }
-                        }
-                    }
-                    KeyCode::Char('c') | KeyCode::Char('C') => {
-                        if !state.editing_field {
-                        }
-                    }
-                    KeyCode::Char('b') | KeyCode::Char('B') => {
-                        if !state.editing_field {
-                            if state.unsaved_changes {
-                                let abort_confirmed = present_abort_confirmation(terminal)?;
-                                if abort_confirmed {
-                                    state.editing_field = false;
-                                    break;
-                                }
-                            } else {
-                                state.editing_field = false;
-                                break;
-                            }
-                        }
-                    }
-                    KeyCode::Char('e') | KeyCode::Char('E') => {
-                        if !state.editing_field {
-                            state.editing_field = !state.editing_field;
-                        }
-                    }
                     KeyCode::Char(c) => {
                         if state.editing_field {
                             state.unsaved_changes = true;
                             state.config_widgets[state.selected_field].push(c);
+                        } else {
+                            // Handle special cases for certain characters
+                            match c {
+                                's' | 'S' => {
+                                    if state.unsaved_changes {
+                                        let confirmed = present_confirmation(terminal)?;
+                                        if confirmed {
+                                            // Save changes
+                                            state.unsaved_changes = false;
+                                            for (field, value) in state.config_fields.iter().zip(state.config_widgets.iter()) {
+                                                config[field] = serde_json::Value::String(value.clone());
+                                            }
+                                        }
+                                    }
+                                }
+                                'b' | 'B' => {
+                                    if state.unsaved_changes {
+                                        let abort_confirmed = present_abort_confirmation(terminal)?;
+                                        if abort_confirmed {
+                                            state.editing_field = false;
+                                            break;
+                                        }
+                                    } else {
+                                        state.editing_field = false;
+                                        break;
+                                    }
+                                }
+                                'e' | 'E' => {
+                                    state.editing_field = !state.editing_field;
+                                }
+                                _ => {}
+                            }
                         }
                     }
                     KeyCode::Backspace => {

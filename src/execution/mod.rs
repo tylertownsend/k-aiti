@@ -51,10 +51,10 @@ pub async fn process_command(matches: ArgMatches) {
     } else if let Some(_) = matches.subcommand_matches("config") {
         let mut config= match crate::config::Config::read() {
             Ok(instance) => instance,
-            Err(error) => panic!("Error reading configuration!"),
+            Err(_) => panic!("Error reading configuration!"),
         };
         match config_menu::run_config_menu(&mut config).await {
-            Ok(()) => println!("Configuration menu closed successfully"),
+            Ok(()) => println!("\nConfiguration menu closed successfully"),
             Err(e) => eprintln!("Error running configuration menu: {}", e),
         }
         match config.write() {

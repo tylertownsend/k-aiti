@@ -42,7 +42,8 @@ pub struct CreatedAccount {
 #[derive(Debug, Clone)]
 pub struct CreatedConfig {
     pub user_name: String,
-    pub accounts: Vec<CreatedAccount>
+    pub accounts: Vec<CreatedAccount>,
+    pub abort: bool
 }
 
 impl ConfigTrait for Config {
