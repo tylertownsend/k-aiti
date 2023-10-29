@@ -280,6 +280,12 @@ fn account_detected_view(state: &mut ProfileSetupState) -> Result<(), Box<dyn st
                         }
                         break;
                     }
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        state.abort_view()?;
+                        if state.abort {
+                            break;
+                        }
+                    }
                     KeyCode::Char('b') | KeyCode::Char('B') => {
                         let temp = state.previous_screen;
                         state.previous_screen = state.current_screen;
@@ -327,6 +333,12 @@ fn account_lookup_view(state: &mut ProfileSetupState) -> Result<(), Box<dyn std:
                         }
                         break;
                     }
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        state.abort_view()?;
+                        if state.abort {
+                            break;
+                        }
+                    }
                     KeyCode::Char('b') | KeyCode::Char('B') => {
                         let temp = state.previous_screen;
                         state.previous_screen = state.current_screen;
@@ -363,6 +375,12 @@ fn account_creation_view(state: &mut ProfileSetupState) -> Result<(), Box<dyn st
                         state.current_screen = temp;
                         break;
                     },
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        state.abort_view()?;
+                        if state.abort {
+                            break;
+                        }
+                    }
                     _ => {}
                 },
                 _ => {}
@@ -404,11 +422,20 @@ fn profile_setup_view(state: &mut ProfileSetupState) -> Result<(), Box<dyn std::
                             state.api_key_input.pop();
                         }
                     },
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        if !editing_field {
+                            state.abort_view()?;
+                            if state.abort {
+                                break;
+                            }
+                        }
+                    }
                     KeyCode::Char(c) => {
                         if editing_field {
                             state.api_key_input.push(c);
                         }
                     },
+                    
                     KeyCode::Enter => {
                         if editing_field {
                             continue;
@@ -464,6 +491,12 @@ fn profile_confirmation_view(state: &mut ProfileSetupState) -> Result<(), Box<dy
                         }
                         break;
                     }
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        state.abort_view()?;
+                        if state.abort {
+                            break;
+                        }
+                    }
                     KeyCode::Char('b') | KeyCode::Char('B') => {
                         let temp = state.previous_screen;
                         state.previous_screen = state.current_screen;
@@ -491,6 +524,12 @@ fn profile_disclaimer_view(state: &mut ProfileSetupState) -> Result<(), Box<dyn 
                         state.current_screen = Screen::CLIComplete;
                         break;
                     },
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        state.abort_view()?;
+                        if state.abort {
+                            break;
+                        }
+                    }
                     KeyCode::Char('b') | KeyCode::Char('B') => {
                         let temp = state.previous_screen;
                         state.previous_screen = state.current_screen;
@@ -517,6 +556,12 @@ fn cli_setup_complete_view(state: &mut ProfileSetupState) -> Result<(), Box<dyn 
                         state.previous_screen = state.current_screen;
                         state.current_screen = Screen::Done;
                         break;
+                    }
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        state.abort_view()?;
+                        if state.abort {
+                            break;
+                        }
                     }
                     _ => {}
                 }
