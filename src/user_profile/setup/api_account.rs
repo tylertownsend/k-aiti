@@ -10,7 +10,6 @@ use webbrowser;
 
 use super::stateful_list::StatefulList;
 
-
 pub fn draw_account_found(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
     choices_list: &mut StatefulList<ListItem>,
@@ -50,19 +49,6 @@ pub fn draw_account_found(
                 Constraint::Percentage(50)   // 'detected_prompt', 'use_api_key_prompt', 'choices_widget'
             ].as_ref())
             .split(chunks[1]);
-            // et chunks = Layout::default()
-            // .direction(Direction::Vertical)
-            // .margin(2)
-            // .constraints(
-            //     [
-            //         Constraint::Length(3),
-            //         Constraint::Length(3),
-            //         Constraint::Length(3),
-            //         Constraint::Length(3),
-            //     ]
-            //     .as_ref(),
-            // )
-            // .split(size);
 
         let detected_prompt = Paragraph::new("We have detected environment variable OPENAI_API_KEY in your system.")
             .style(Style::default().fg(Color::White))

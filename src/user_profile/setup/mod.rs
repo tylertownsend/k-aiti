@@ -5,8 +5,8 @@ use crossterm::{
 };
 use tui::{
     backend::CrosstermBackend,
-    widgets::ListItem,
-    Terminal,
+    widgets::{ListItem, Block, Borders, List},
+    Terminal, layout::Rect, style::{Style, Modifier},
 };
 
 use std::io::{stdout, Stdout};
@@ -39,16 +39,33 @@ enum Screen {
     Done
 }
 
+struct PopupResult {
+    abort: bool
+}
+
+
 struct ProfileSetupState {
     previous_screen: Screen,
     current_screen: Screen,
     retrieve_key: bool,
     api_key_input: String,
     terminal: Terminal<CrosstermBackend<Stdout>>,
+    /**
+     * Abort the setup process
+     */
     abort: bool
 }
 
-
+impl ProfileSetupState {
+    pub fn abort_view(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let result = draw_popup(&mut self.terminal)?;
+        if result.abort {
+            self.abort = true;
+            self.current_screen = Screen::Done;
+        }
+        Ok(())
+    }
+}
 
 pub fn run(env_var_handler: &Box<dyn EnvironmentVariableHandler>) -> Result<CreatedConfig, Box<dyn std::error::Error>> {
     let api_key_input = match env_var_handler.get("OPENAI_API_KEY") {
@@ -74,8 +91,9 @@ pub fn run(env_var_handler: &Box<dyn EnvironmentVariableHandler>) -> Result<Crea
         retrieve_key,
         api_key_input, 
         terminal,
-        abort: false
+        abort: false,
     };
+
     loop {
         state.terminal.clear()?;
         match state.current_screen {
@@ -116,7 +134,7 @@ pub fn run(env_var_handler: &Box<dyn EnvironmentVariableHandler>) -> Result<Crea
     }
     disable_raw_mode()?;
     execute!(state.terminal.backend_mut(), Clear(ClearType::All))?;
-
+    state.terminal.clear()?;
     let created_profile = CreatedConfig {
         user_name: "".to_string(),
         accounts: vec![
@@ -126,13 +144,85 @@ pub fn run(env_var_handler: &Box<dyn EnvironmentVariableHandler>) -> Result<Crea
                 env_var_value: state.api_key_input,
                 create_env_var: true
             }
-        ]
+        ],
+        abort: state.abort
     };
     Ok(created_profile)
 }
 
+fn draw_popup(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>
+) -> Result<PopupResult, Box<dyn std::error::Error>> {
+    let mut abort = false;
+
+    let choices = vec!["Yes", "No"];
+    let mut choices_list = StatefulList::new(choices.clone().into_iter().map(ListItem::new).collect::<Vec<_>>());
+    loop {
+        terminal.draw(|f| {
+            let size = f.size();
+
+            // Center the popup
+            let popup = Rect {
+                x: size.width / 4,
+                y: size.height / 4,
+                width: size.width / 2,
+                height: size.height / 2,
+            };
+
+            let block = Block::default()
+                .title("Are you sure you want to abandon?")
+                .borders(Borders::ALL);
+            f.render_widget(block, popup);
+
+            let choices_rect = Rect {
+                x: popup.x + 2,
+                y: popup.y + 1,
+                width: popup.width - 4,
+                height: popup.height - 2,
+            };
+
+            let list = List::new(choices_list.items.clone())
+                .block(Block::default())
+                .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+                .highlight_symbol(">");
+            
+            f.render_stateful_widget(list, choices_rect, &mut choices_list.state);
+        })?;
+        match read()? {
+            Event::Key(event) => match event.kind {
+                KeyEventKind::Press => match event.code {
+                    KeyCode::Up => {
+                        choices_list.next();
+                    }
+                    KeyCode::Down => {
+                        choices_list.previous();
+                    }
+                    KeyCode::Enter => {
+                        // Proceed to the next screen based on the user's selection
+                        if let Some(selected_index) = &choices_list.state.selected() {
+                            if choices[*selected_index] == "Yes" {
+                                abort = true;
+                            }
+                        }
+                        break;
+                    }
+                    KeyCode::Esc => {
+                        break;
+                    }
+                    _ => {}
+                }
+                _ => {}
+            }
+            _ => {}
+        }
+    }
+
+    Ok(PopupResult { abort })
+}
+
 fn render_intro_screen(state: &mut ProfileSetupState) -> Result<(), Box<dyn std::error::Error>> {
     // Render intro screen
+
     loop {
         draw_intro(&mut state.terminal)?;
         match read()? {
@@ -147,6 +237,12 @@ fn render_intro_screen(state: &mut ProfileSetupState) -> Result<(), Box<dyn std:
                         };
                         break;
                     }
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        state.abort_view()?;
+                        if state.abort {
+                            break;
+                        }
+                    },
                     _ => {}
                 }
                 _ => {}
