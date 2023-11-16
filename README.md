@@ -70,4 +70,3 @@ Now you should be able to use kaiti from your shell!
    kaiti --help
    ```
    Run the above command for a list of available commands and usage details.
-

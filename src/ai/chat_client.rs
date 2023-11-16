@@ -1,11 +1,10 @@
-use crate::ai::chat_model::{ChatModel, ChatModelRequest};
-use crate::render::terminal_renderer::{TerminalRenderer};
-use crate::execution::input_provider::get_user_input;
 use std::error::Error;
-use std::io::{stdout, Write};
-use async_openai::types::{ChatCompletionRequestMessage};
-use crossterm::style::Color;
-use futures::StreamExt;
+
+use async_openai::types::ChatCompletionRequestMessage;
+
+use crate::ai::chat_model::{ChatModel, ChatModelRequest};
+use crate::render::terminal_renderer::TerminalRenderer;
+use crate::execution::input_provider::get_user_input;
 
 pub struct ChatClient {
     chat_model: Box<dyn ChatModel>,
@@ -23,43 +22,18 @@ impl ChatClient {
     }
 
     pub async fn handle_response(&mut self, user_input: String, renderer: &mut TerminalRenderer) -> Result<String, Box<dyn Error>> {
-
-        let mut response_string = String::new();
-        let mut lock = stdout().lock();
-
         let user_message = self.chat_model.create_user_message(user_input)?;
         self.chat_log.push(user_message);
-        let client_request = ChatModelRequest{ messages: self.chat_log.clone() };
+        let client_request = ChatModelRequest { messages: self.chat_log.clone() };
 
-        let mut stream = match self.chat_model.create_response_stream(&client_request).await {
-            Ok(result) => result,
-            Err(e) => {
-                println!("{}", e.to_string());
-                panic!("Unable to create stream")
-            }
-        };
-        renderer.print_entity("AI ", Color::Green);
-        while let Some(result) = stream.next().await {
-            match result {
-                Ok(response) => {
-                    response.choices.iter().for_each(|chat_choice| {
-                        if let Some(ref content) = chat_choice.delta.content {
-                            renderer.render(& mut lock, content).unwrap();
-                            response_string.push_str(content);
-                        }
-                    });
-                }
-                Err(err) => {
-                    renderer.print_error(&mut lock, err.to_string())
-                }
-            }
-            stdout().flush()?;
-        }
-        println!("\n");
+        let stream = self.chat_model.create_response_stream(&client_request).await?;
 
-        let response_message = self.chat_model
-            .create_assistant_message(response_string.clone())?;
+        // Delegate to renderer to process the stream
+        let response_string = renderer.render_stream(stream).await?;
+
+        let response_message = self.chat_model.create_assistant_message(response_string.clone())?;
         self.chat_log.push(response_message);
+
         Ok(response_string)
     }
 }
