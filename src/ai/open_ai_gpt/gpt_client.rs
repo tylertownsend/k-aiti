@@ -4,15 +4,18 @@ use async_openai::error::OpenAIError;
 use async_openai::types::{
     ChatCompletionRequestMessageArgs, 
     CreateChatCompletionRequestArgs,
-    ChatCompletionResponseStream,
     Role,
     ChatCompletionRequestMessage,
     ChatCompletionResponseMessage
 };
 use async_openai::Client;
 use async_trait::async_trait;
+use futures::{TryStreamExt, StreamExt};
 
+use crate::ai::{ChatCompletionDelta, ChatCompletionChoice, ChatCompletionChunk, ModelUsage};
 use crate::ai::chat_model::{ChatModel, ChatModelRequest};
+use crate::ai::stream::CompletionStream;
+
 
 #[derive(Clone)]
 pub struct GptClient {
@@ -197,10 +200,7 @@ impl ChatModel for GptClient  {
         Ok(self.client.chat().create(request).await?.choices[0].clone().message)
     }
 
-    async fn create_response_stream(
-        &mut self,
-        client_request: &ChatModelRequest,
-    ) -> Result<ChatCompletionResponseStream, OpenAIError> {
+    async fn create_response_stream(&mut self, client_request: &ChatModelRequest) -> Result<CompletionStream, Box<dyn Error>> {
         // Update the generate_response method in the GptClient implementation
         let request = CreateChatCompletionRequestArgs::default()
             .model(self.config.model.to_string())
@@ -210,19 +210,45 @@ impl ChatModel for GptClient  {
             .messages(client_request.messages.clone())
             .build()?;
 
-        let stream = self.client.chat().create_stream(request).await?;
+        let response = self.client.chat()
+            .create_stream(request)
+            .await
+            .expect("Failed to create stream");
 
-        // let client = Client::new();
-        // let request = CreateChatCompletionRequestArgs::default()
-        //     .model("gpt-3.5-turbo")
-        //     .max_tokens(1024u16)
-        //     .messages([ChatCompletionRequestMessageArgs::default()
-        //         .content("hello")
-        //         .role(Role::User)
-        //         .build()?])
-        //     .build()?;
+        // Transform the stream
+        let stream = response
+            .map_err(|e| Box::new(e) as Box<dyn Error> )
+            .map(|result| {
+                result.and_then(|chat_completion_response| {
+                    // Process the chat_completion_response to transform it into the new type
+                    // Assuming you want to convert CreateChatCompletionStreamResponse to ChatCompletionChunck
+                    let choices = chat_completion_response.choices.into_iter().map(|choice_delta| {
+                        ChatCompletionChoice {
+                            index: choice_delta.index,
+                            delta: ChatCompletionDelta {
+                                content: choice_delta.delta.content,
+                                role: Some(crate::ai::Role::Assistant),
+                            },
+                            finish_reason: choice_delta.finish_reason,
+                        }
+                    }).collect();
 
-        // let stream = client.chat().create_stream(request).await?;
-        Ok(stream)
+                    Ok(ChatCompletionChunk {
+                        usage: Some(ModelUsage {
+                            completion_tokens: 0, // todo
+                            prompt_tokens:     0, // todo
+                            total_tokens:      0, // todo
+                        }),
+                        id: chat_completion_response.id,
+                        object: chat_completion_response.object,
+                        created: chat_completion_response.created,
+                        model: chat_completion_response.model,
+                        choices,
+                    })
+                })
+            })
+            .boxed();
+        // Box the stream and pin it
+        Ok(Box::pin(stream))
     }
 }

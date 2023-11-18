@@ -1,7 +1,9 @@
 use std::error::Error;
 
-use async_openai::{types::{ChatCompletionRequestMessage, ChatCompletionResponseMessage, ChatCompletionResponseStream}, error::OpenAIError};
+use async_openai::{types::{ChatCompletionRequestMessage, ChatCompletionResponseMessage}, error::OpenAIError};
 use async_trait::async_trait;
+
+use super::stream::CompletionStream;
 
 #[derive(Clone)]
 pub struct ChatModelRequest {
@@ -18,8 +20,5 @@ pub trait ChatModel {
 
     async fn create_response_message(&mut self, client_request: &ChatModelRequest) -> Result<ChatCompletionResponseMessage, OpenAIError>;
 
-    async fn create_response_stream(
-        &mut self,
-        client_request: &ChatModelRequest,
-    ) -> Result<ChatCompletionResponseStream, OpenAIError>;
+    async fn create_response_stream(&mut self, client_request: &ChatModelRequest) -> Result<CompletionStream, Box<dyn Error>>;
 }
