@@ -1,12 +1,8 @@
 use std::error::Error;
 
-use async_openai::error::OpenAIError;
 use async_openai::types::{
-    ChatCompletionRequestMessageArgs, 
     CreateChatCompletionRequestArgs,
     Role,
-    ChatCompletionRequestMessage,
-    ChatCompletionResponseMessage
 };
 use async_openai::Client;
 use async_trait::async_trait;
@@ -34,7 +30,6 @@ pub struct GptConfig {
 impl ChatModel for GptClient  {
 
     fn new(config: serde_json::Value) -> GptClient {
-        
         let max_tokens = match config.get("max_tokens") {
             Some(value) => if value.is_u64() {
                 value.as_u64().unwrap_or(1000) as u16
@@ -51,7 +46,6 @@ impl ChatModel for GptClient  {
             },
             None => 1000,
         };
-        
         let n = match config.get("n") {
             Some(value) => if value.is_u64() {
                 value.as_u64().unwrap_or(1) as u8
@@ -68,7 +62,6 @@ impl ChatModel for GptClient  {
             },
             None => 1,
         };
-        
         let temperature = match config.get("temperature") {
             Some(value) => if value.is_f64() {
                 value.as_f64().unwrap_or(0.8) as f32
@@ -85,7 +78,6 @@ impl ChatModel for GptClient  {
             },
             None => 0.8,
         };
-        
         let model = match config.get("model") {
             Some(value) => value.as_str().unwrap_or("gpt-3.5-turbo").to_string(),
             None => String::from("gpt-3.5-turbo"),
@@ -102,39 +94,30 @@ impl ChatModel for GptClient  {
         }
     }
 
-    fn create_user_message(&mut self, prompt: String) -> Result<ChatCompletionRequestMessage, Box<dyn Error>> {
-        Ok(ChatCompletionRequestMessageArgs::default()
-            .content(prompt.to_string())
-            .role(Role::User)
-            .build()?)
-    }
 
-    fn create_assistant_message(&mut self, prompt: String) -> Result<ChatCompletionRequestMessage, Box<dyn Error>> {
-        Ok(ChatCompletionRequestMessageArgs::default()
-            .content(prompt.to_string())
-            .role(Role::User)
-            .build()?)
-    }
-
-    async fn create_response_message(&mut self, client_request: &ChatModelRequest) -> Result<ChatCompletionResponseMessage, OpenAIError> {
-        let request = CreateChatCompletionRequestArgs::default()
-            .model(self.config.model.to_string())
-            .n(self.config.n)
-            .max_tokens(self.config.max_tokens)
-            .temperature(self.config.temperature)
-            .messages(client_request.messages.clone())
-            .build()?;
-        Ok(self.client.chat().create(request).await?.choices[0].clone().message)
-    }
 
     async fn create_response_stream(&mut self, client_request: &ChatModelRequest) -> Result<CompletionStream, Box<dyn Error>> {
+        // convert messages to that expected by async_ openai
+        let messages = client_request.messages.iter()
+            .map(|msg| {
+                async_openai::types::ChatCompletionRequestMessage {
+                    content: msg.content.clone(),
+                    name: msg.name.clone(),
+                    role: match msg.role {
+                        crate::ai::Role::User      => Role::User,
+                        crate::ai::Role::Assistant => Role::Assistant,
+                        crate::ai::Role::System    => Role::Assistant,
+                    }
+                }
+        }).collect::<Vec<async_openai::types::ChatCompletionRequestMessage>>();
+
         // Update the generate_response method in the GptClient implementation
         let request = CreateChatCompletionRequestArgs::default()
             .model(self.config.model.to_string())
             .n(self.config.n)
             .max_tokens(self.config.max_tokens)
             .temperature(self.config.temperature)
-            .messages(client_request.messages.clone())
+            .messages(messages)
             .build()?;
 
         let response = self.client.chat()

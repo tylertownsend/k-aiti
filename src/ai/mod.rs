@@ -3,7 +3,6 @@ use std::error::Error;
 use crate::config::Model;
 use crate::open_ai_gpt::GptClient;
 
-pub mod chat;
 mod chat_client;
 mod chat_model;
 mod stream;

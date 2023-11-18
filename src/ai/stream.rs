@@ -1,10 +1,24 @@
-use std::{error::Error, pin::Pin};
+use std::pin::Pin;
 
-use futures::{Stream, StreamExt};
-
+use futures::Stream;
 use serde::{Deserialize, Serialize};
 
 // use crate::ai::chat::ChatDataStream;
+#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]//, Builder)]
+// #[builder(name = "ChatCompletionRequestMessageArgs")]
+// #[builder(pattern = "mutable")]
+// #[builder(setter(into, strip_option), default)]
+// #[builder(derive(Debug))]
+// #[builder(build_fn(error = "OpenAIError"))]
+pub struct ChatCompletionRequestMessage {
+    /// The role of the author of this message.
+    pub role: Role,
+    /// The contents of the message
+    pub content: String,
+    /// The name of the user in a multi-user chat
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
 #[serde(rename_all = "lowercase")]

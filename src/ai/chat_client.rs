@@ -1,14 +1,14 @@
 use std::error::Error;
 
-use async_openai::types::ChatCompletionRequestMessage;
-
 use crate::ai::chat_model::{ChatModel, ChatModelRequest};
 use crate::render::terminal_renderer::TerminalRenderer;
 use crate::execution::input_provider::get_user_input;
 
+use super::stream::{ChatCompletionRequestMessage, Role};
+
 pub struct ChatClient {
     chat_model: Box<dyn ChatModel>,
-    chat_log: Vec<ChatCompletionRequestMessage>,
+    chat_log: Vec<crate::ai::stream::ChatCompletionRequestMessage>,
 }
 
 impl ChatClient {
@@ -22,7 +22,11 @@ impl ChatClient {
     }
 
     pub async fn handle_response(&mut self, user_input: String, renderer: &mut TerminalRenderer) -> Result<String, Box<dyn Error>> {
-        let user_message = self.chat_model.create_user_message(user_input)?;
+        let user_message = ChatCompletionRequestMessage {
+            content: user_input,
+            role: Role::User,
+            name: None
+        };
         self.chat_log.push(user_message);
         let client_request = ChatModelRequest { messages: self.chat_log.clone() };
 
@@ -31,7 +35,11 @@ impl ChatClient {
         // Delegate to renderer to process the stream
         let response_string = renderer.render_stream(stream).await?;
 
-        let response_message = self.chat_model.create_assistant_message(response_string.clone())?;
+        let response_message = ChatCompletionRequestMessage {
+            content: response_string.clone(),
+            role: Role::Assistant,
+            name: None
+        };
         self.chat_log.push(response_message);
 
         Ok(response_string)
