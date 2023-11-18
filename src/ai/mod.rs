@@ -1,12 +1,11 @@
 use std::error::Error;
 
 use crate::config::Model;
-use self::{open_ai_gpt::GptClient};
+use crate::open_ai_gpt::GptClient;
 
 pub mod chat;
 mod chat_client;
 mod chat_model;
-mod open_ai_gpt;
 mod stream;
 
 pub use chat_client::ChatClient;
