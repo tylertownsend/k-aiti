@@ -5,10 +5,9 @@ use crossterm::{
     execute,
     style::{Color, Print, ResetColor, SetForegroundColor, SetAttribute, Attribute},
 };
-use futures::Stream;
 use futures::StreamExt;
 
-use crate::ai::CompletionStream;
+use crate::ai::ChatCompletionStream;
 
 pub struct TerminalRenderer {
 
@@ -24,7 +23,7 @@ impl TerminalRenderer {
         self.print_entity("You", Color::Cyan);
     }
 
-    pub async fn render_stream(&mut self, mut stream: CompletionStream) -> Result<String, Box<dyn Error>> {
+    pub async fn render_stream(&mut self, mut stream: ChatCompletionStream) -> Result<String, Box<dyn Error>> {
         let mut response_string = String::new();
         let mut lock = stdout().lock();
 

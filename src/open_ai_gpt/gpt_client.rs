@@ -8,7 +8,7 @@ use async_openai::Client;
 use async_trait::async_trait;
 use futures::{TryStreamExt, StreamExt};
 
-use crate::ai::{CompletionStream, ChatCompletionDelta, ChatCompletionChoice, ChatCompletionChunk, ModelUsage, ChatModel, ChatModelRequest};
+use crate::ai::{ChatCompletionStream, ChatCompletionDelta, ChatCompletionChoice, ChatCompletionChunk, ModelUsage, ChatModel, ChatModelRequest};
 
 
 #[derive(Clone)]
@@ -94,9 +94,7 @@ impl ChatModel for GptClient  {
         }
     }
 
-
-
-    async fn create_response_stream(&mut self, client_request: &ChatModelRequest) -> Result<CompletionStream, Box<dyn Error>> {
+    async fn create_response_stream(&mut self, client_request: &ChatModelRequest) -> Result<ChatCompletionStream, Box<dyn Error>> {
         // convert messages to that expected by async_ openai
         let messages = client_request.messages.iter()
             .map(|msg| {

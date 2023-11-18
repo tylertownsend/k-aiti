@@ -59,15 +59,5 @@ pub struct ChatCompletionChunk {
     pub usage: Option<ModelUsage>,
 }
 
-pub type CompletionStream =
+pub type ChatCompletionStream =
     Pin<Box<dyn Stream<Item = Result<ChatCompletionChunk, Box<dyn std::error::Error>>> + Send>>;
-
-#[async_trait::async_trait]
-pub trait StreamHandler {
-    type Item;
-    type Error;
-    type Stream: Stream<Item = Result<Self::Item, Self::Error>> + Send + 'static;
-
-    // Define a method that will return a stream.
-    async fn get_stream(&self) -> Self::Stream;
-}
