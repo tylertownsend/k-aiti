@@ -110,8 +110,10 @@ impl EnvironmentVariableHandler for LinuxEnvironmentVariableHandler {
     }
 
     fn update(&self, env_vars: &[EnvVar]) -> Result<(), Box<dyn Error>> {
-        // Linux implementation for updating environment variables
-        update_linux(env_vars)
+        let shell_info = get_config_path()?;
+        let config_buf = PathBuf::from(shell_info.shell_config_file.clone());
+        update_unix_shell_rc(env_vars, config_buf)?;
+        update_shell(shell_info.shell_config_file.clone(), shell_info.shell_name.clone())
     }
 }
 
@@ -134,8 +136,10 @@ impl EnvironmentVariableHandler for MacOSEnvironmentVariableHandler {
     }
 
     fn update(&self, env_vars: &[EnvVar]) -> Result<(), Box<dyn Error>> {
-        // macOS implementation for updating environment variables
-        update_mac(env_vars)
+        let shell_info = get_config_path()?;
+        let config_buf = PathBuf::from(shell_info.shell_config_file.clone());
+        update_unix_shell_rc(env_vars, config_buf)?;
+        update_shell(shell_info.shell_config_file.clone(), shell_info.shell_name.clone())
     }
 }
 
@@ -184,20 +188,6 @@ fn get_config_path() -> Result<ShellInfo, Box<dyn std::error::Error>> {
         _ => panic!("Unsupported shell environment detected!")
     };
     Ok(shell_info)
-}
-
-fn update_linux(env_vars: &[EnvVar]) -> Result<(), Box<dyn std::error::Error>> {
-    let shell_info = get_config_path()?;
-    let config_buf = PathBuf::from(shell_info.shell_config_file.clone());
-    update_unix_shell_rc(env_vars, config_buf)?;
-    update_shell(shell_info.shell_config_file.clone(), shell_info.shell_name.clone())
-}
-
-fn update_mac(env_vars: &[EnvVar]) -> Result<(), Box<dyn std::error::Error>> {
-    let shell_info = get_config_path()?;
-    let config_buf = PathBuf::from(shell_info.shell_config_file.clone());
-    update_unix_shell_rc(env_vars, config_buf)?;
-    update_shell(shell_info.shell_config_file.clone(), shell_info.shell_name.clone())
 }
 
 fn update_shell(config_file: String, shell_name: String) -> Result<(), Box<dyn std::error::Error>> {
