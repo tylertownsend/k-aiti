@@ -1,4 +1,4 @@
-use crate::config::config_manager::ConfigTrait;
+use crate::config::ConfigTrait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

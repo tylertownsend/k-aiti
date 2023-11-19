@@ -11,7 +11,7 @@ use tui::{
 };
 
 use crate::execution::config_menu::stateful_list::StatefulList;
-use crate::config::Config;
+use crate::config::user::settings::SettingsConfig as Config;
 use super::view_model;
 
 

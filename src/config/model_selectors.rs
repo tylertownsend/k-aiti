@@ -1,4 +1,4 @@
-use super::{Config, Model};
+use super::user::settings::{SettingsConfig, ModelConfig};
 
 pub enum ModeSelection {
     Completion,
@@ -6,7 +6,7 @@ pub enum ModeSelection {
     // Add more modes here as needed
 }
 
-fn get_mode_id_by_name(config: &Config, mode: ModeSelection) -> Option<String> {
+fn get_mode_id_by_name(config: &SettingsConfig, mode: ModeSelection) -> Option<String> {
     let res = match mode {
         ModeSelection::Completion => config.modes.completion.id.clone(),
         ModeSelection::Chat => config.modes.chat.id.clone(),
@@ -15,7 +15,7 @@ fn get_mode_id_by_name(config: &Config, mode: ModeSelection) -> Option<String> {
     Option::Some(res)
 }
 
-pub fn get_model_by_mode(config: &Config, mode: ModeSelection) -> Option<&Model> {
+pub fn get_model_by_mode(config: &SettingsConfig, mode: ModeSelection) -> Option<&ModelConfig> {
     let mode_id = get_mode_id_by_name(config, mode);
 
     let model = config.models.iter().find(|&m| {

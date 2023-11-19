@@ -1,13 +1,13 @@
 use std::error::Error;
 
 use crate::ai::chat_model::ChatModel;
-use crate::config::Model;
+use crate::config::user::settings::ModelConfig;
 use crate::open_ai_gpt::GptClient;
 
 mod terminal_renderer;
 mod chat_client;
 
-pub async fn run_chat_mode(c_model: &Model) -> Result<(), Box<dyn Error>> {
+pub async fn run_chat_mode(c_model: &ModelConfig) -> Result<(), Box<dyn Error>> {
     let mut renderer = terminal_renderer::TerminalRenderer::new();
     let chat_model = create_chat_model(c_model)?;
     let mut chat_client = chat_client::ChatClient::new(chat_model);
@@ -16,7 +16,7 @@ pub async fn run_chat_mode(c_model: &Model) -> Result<(), Box<dyn Error>> {
 }
 
 // TODO: Implement a model path to determine the correct selection
-fn create_chat_model(c_model: &Model) -> Result<Box<dyn ChatModel>, Box<dyn Error>> {
+fn create_chat_model(c_model: &ModelConfig) -> Result<Box<dyn ChatModel>, Box<dyn Error>> {
     let model = match c_model.name.as_str() {
         "ChatGPT" => {
             let config = serde_json::to_value(c_model.config.clone())?;

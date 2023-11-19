@@ -9,11 +9,10 @@ use tui::{
     Terminal,
 };
 
-use crate::config::Model;
-
+use crate::config::user::settings::ModelConfig;
 use super::stateful_list::StatefulList;
 
-pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c_model: &mut Model) -> Result<(), Box<dyn Error>> {
+pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c_model: &mut ModelConfig) -> Result<(), Box<dyn Error>> {
     let required_config = ModelRequiredConfig{
         id: c_model.id.to_string(),
         name: c_model.name.to_string()

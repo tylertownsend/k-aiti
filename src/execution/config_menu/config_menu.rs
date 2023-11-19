@@ -12,9 +12,8 @@ use tui::{
     Terminal,
 };
 
+use crate::config::user::settings::SettingsConfig as Config;
 use crate::execution::config_menu::view_models;
-
-use crate::config::Config;
 
 #[derive(PartialEq)]
 enum MenuItem {

@@ -1,5 +1,5 @@
 use clap::ArgMatches;
-use crate::config::config_manager::ConfigTrait;
+use crate::config::ConfigTrait;
 
 pub mod chat_mode;
 pub mod debug_mode;
@@ -27,7 +27,7 @@ async fn start_chat() {
     // } else {
     //     Vec::new()
     // };
-    let config = match crate::config::Config::read() {
+    let config = match crate::config::user::settings::SettingsConfig::read() {
         Ok(path) => path,
         Err(error) => {
             panic!("{}", error);
@@ -51,7 +51,7 @@ async fn start_chat() {
 }
 
 async fn start_config_menu() {
-    let mut config= match crate::config::Config::read() {
+    let mut config= match crate::config::user::settings::SettingsConfig::read() {
         Ok(instance) => instance,
         Err(_) => panic!("Error reading configuration!"),
     };

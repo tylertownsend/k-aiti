@@ -1,11 +1,15 @@
 use std::error::Error;
 
-use crate::config::{config_manager::ConfigTrait, settings_setup};
+use serde::{Deserialize, Serialize};
 
-use super::config::Config;
+use crate::config::{
+    ConfigTrait, 
+    user::settings::{Application, ModelConfig, SettingsConfig, Mode, InteractionModes }
+};
+use super::config::Config as ProfileConfig;
 
 pub fn validate() -> Result<bool, Box<dyn Error>> {
-    if Config::config_exists() {
+    if ProfileConfig::config_exists() {
         return Ok(false);
     }
     Ok(true)
@@ -43,9 +47,53 @@ fn profile_setup() -> Result<SetupResult, Box<dyn Error>> {
 
     env_var_handler.update(&api_keys_to_add)?;
 
-    let config = Config::new(created_profile);
+    let config = ProfileConfig::new(created_profile);
     config.write()?;
     Ok(result)
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct GptConfig {
+    max_tokens: u16,
+    n: u8,
+    temperature: f32,
+    model: String,
+}
+
+fn settings_setup() -> Result<(), Box<dyn std::error::Error>> {
+    let gpt = GptConfig {
+        model: String::from("gpt-3.5-turbo"),
+        max_tokens: 100,
+        n: 1,
+        temperature: 0.9
+    };
+    let config = SettingsConfig {
+        application: {
+            Application { 
+                name: String::from("k-aiti"), 
+                version: String::from("0.0.1")
+            }
+        },
+        models: vec![
+            {
+                ModelConfig {
+                    id: String::from("chatgpt"),
+                    name: String::from("ChatGPT"),
+                    config: serde_json::to_value(gpt)?
+                }
+            }
+        ],
+        modes: InteractionModes {
+            completion: Mode {
+                id: String::from("chatgpt")
+            },
+            chat: Mode {
+                id: String::from("chatgpt")
+            }
+        }
+    };
+    config.write()?;
+    Ok(())
 }
 
 pub fn welcome_message() {
