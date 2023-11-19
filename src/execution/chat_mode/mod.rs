@@ -1,17 +1,16 @@
 use std::error::Error;
 
-use crate::ai::ChatModel;
+use crate::ai::chat_model::ChatModel;
 use crate::config::Model;
 use crate::open_ai_gpt::GptClient;
-use crate::{
-    ai,
-    render::terminal_renderer::TerminalRenderer,
-};
+
+mod terminal_renderer;
+mod chat_client;
 
 pub async fn run_chat_mode(c_model: &Model) -> Result<(), Box<dyn Error>> {
-    let mut renderer = TerminalRenderer::new();
+    let mut renderer = terminal_renderer::TerminalRenderer::new();
     let chat_model = create_chat_model(c_model)?;
-    let mut chat_client = ai::ChatClient::new(chat_model);
+    let mut chat_client = chat_client::ChatClient::new(chat_model);
     chat_client.run(&mut renderer).await?;
     Ok(())
 }

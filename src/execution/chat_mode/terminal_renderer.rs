@@ -7,7 +7,7 @@ use crossterm::{
 };
 use futures::StreamExt;
 
-use crate::ai::ChatCompletionStream;
+use crate::ai::chat_types::ChatCompletionStream;
 
 pub struct TerminalRenderer {
 

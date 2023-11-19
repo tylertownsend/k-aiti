@@ -8,7 +8,8 @@ use async_openai::Client;
 use async_trait::async_trait;
 use futures::{TryStreamExt, StreamExt};
 
-use crate::ai::{ChatCompletionStream, ChatCompletionDelta, ChatCompletionChoice, ChatCompletionChunk, ModelUsage, ChatModel, ChatModelRequest};
+use crate::ai::chat_types::{ChatCompletionStream, ChatCompletionDelta, ChatCompletionChoice, ChatCompletionChunk, ModelUsage};
+use crate::ai::chat_model::{ChatModel, ChatModelRequest};
 
 
 #[derive(Clone)]
@@ -102,9 +103,9 @@ impl ChatModel for GptClient  {
                     content: msg.content.clone(),
                     name: msg.name.clone(),
                     role: match msg.role {
-                        crate::ai::Role::User      => Role::User,
-                        crate::ai::Role::Assistant => Role::Assistant,
-                        crate::ai::Role::System    => Role::Assistant,
+                        crate::ai::chat_types::Role::User      => Role::User,
+                        crate::ai::chat_types::Role::Assistant => Role::Assistant,
+                        crate::ai::chat_types::Role::System    => Role::Assistant,
                     }
                 }
         }).collect::<Vec<async_openai::types::ChatCompletionRequestMessage>>();
@@ -135,7 +136,7 @@ impl ChatModel for GptClient  {
                             index: choice_delta.index,
                             delta: ChatCompletionDelta {
                                 content: choice_delta.delta.content,
-                                role: Some(crate::ai::Role::Assistant),
+                                role: Some(crate::ai::chat_types::Role::Assistant),
                             },
                             finish_reason: choice_delta.finish_reason,
                         }

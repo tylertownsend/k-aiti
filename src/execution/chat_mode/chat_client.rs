@@ -1,10 +1,11 @@
 use std::error::Error;
 
-use crate::ai::chat_model::{ChatModel, ChatModelRequest};
-use crate::render::terminal_renderer::TerminalRenderer;
+use crate::ai::{
+    chat_model::{ChatModel, ChatModelRequest},
+    chat_types::{ChatCompletionRequestMessage, Role}
+};
+use super::terminal_renderer::TerminalRenderer;
 use crate::execution::input_provider::get_user_input;
-
-use super::chat_types::{ChatCompletionRequestMessage, Role};
 
 pub struct ChatClient {
     chat_model: Box<dyn ChatModel>,
