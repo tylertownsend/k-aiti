@@ -1,17 +1,16 @@
 use clap::{App, Arg, SubCommand};
 
 use k_aiti::execution;
-use k_aiti::user_profile;
 
 #[tokio::main]
 async fn main() {
-    if user_profile::validate().expect("user profile validation failed") {
-        let result = user_profile::setup().expect("User profile failed during creation");
+    if execution::user_profile::validate().expect("user profile validation failed") {
+        let result = execution::user_profile::setup().expect("User profile failed during creation");
         if result.abort {
-            user_profile::abort_message();
+            execution::user_profile::abort_message();
             return
         }
-        user_profile::welcome_message();
+        execution::user_profile::welcome_message();
     }
 
     let matches = App::new("kaiti")

@@ -1,13 +1,8 @@
 use std::error::Error;
 
-
 use crate::config::{config_manager::ConfigTrait, settings_setup};
 
-use self::config::{ Config };
-
-mod config;
-mod setup;
-mod environment_variables;
+use super::config::Config;
 
 pub fn validate() -> Result<bool, Box<dyn Error>> {
     if Config::config_exists() {
@@ -29,8 +24,8 @@ pub fn setup() -> Result<SetupResult, Box<dyn Error>> {
 fn profile_setup() -> Result<SetupResult, Box<dyn Error>> {
     let mut result = SetupResult { abort: false };
 
-    let env_var_handler = environment_variables::get_environment_variable_handler()?;
-    let created_profile = setup::run(&env_var_handler)?;
+    let env_var_handler = super::environment_variables::get_environment_variable_handler()?;
+    let created_profile = super::profile_setup_menu::run(&env_var_handler)?;
     if created_profile.abort {
         result.abort = true;
         return Ok(result)
@@ -40,7 +35,7 @@ fn profile_setup() -> Result<SetupResult, Box<dyn Error>> {
         .accounts.clone().into_iter()
         .filter(|account| account.create_env_var == true)
         .map(|account| {
-            environment_variables::EnvVar { 
+            super::environment_variables::EnvVar { 
                 name: account.env_var_name.clone(),
                 value: account.env_var_value.clone()
             }
