@@ -8,7 +8,7 @@ use tui::{
 };
 use webbrowser;
 
-use super::stateful_list::StatefulList;
+use super::super::ui::StatefulList;
 
 pub fn draw_account_found(
     terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,

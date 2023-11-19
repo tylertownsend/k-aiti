@@ -6,6 +6,7 @@ pub mod debug_mode;
 pub mod input_provider;
 pub mod config_menu;
 pub mod user_profile;
+mod ui;
 
 pub async fn process_command(matches: ArgMatches) {
     if let Some(_) = matches.subcommand_matches("search") {

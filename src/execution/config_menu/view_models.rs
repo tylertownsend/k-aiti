@@ -10,9 +10,9 @@ use tui::{
     Terminal,
 };
 
-use crate::execution::config_menu::stateful_list::StatefulList;
 use crate::config::user::settings::SettingsConfig as Config;
 use super::view_model;
+use super::super::ui::StatefulList;
 
 
 pub fn draw_view_models(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, config: &mut Config) -> Result<(), Box<dyn std::error::Error>> {

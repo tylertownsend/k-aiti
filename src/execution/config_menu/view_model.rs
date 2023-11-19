@@ -10,7 +10,7 @@ use tui::{
 };
 
 use crate::config::user::settings::ModelConfig;
-use super::stateful_list::StatefulList;
+use super::super::ui::StatefulList;
 
 pub fn view(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, c_model: &mut ModelConfig) -> Result<(), Box<dyn Error>> {
     let required_config = ModelRequiredConfig{

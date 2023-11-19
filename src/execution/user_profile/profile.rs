@@ -7,7 +7,7 @@ use tui::{
     Terminal,
 };
 
-use super::stateful_list::StatefulList;
+use super::super::ui::StatefulList;
 
 // intro
 pub fn draw_intro(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<(), Box<dyn std::error::Error>> {

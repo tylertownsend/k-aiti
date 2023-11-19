@@ -3,7 +3,6 @@ mod profile_setup_menu;
 mod environment_variables;
 mod api_account;
 mod profile;
-mod stateful_list;
 mod profile_setup;
 
 pub use profile_setup::{validate, welcome_message, setup, abort_message};
