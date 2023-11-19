@@ -6,7 +6,7 @@ use crate::config::{
     ConfigTrait, 
     user::settings::{Application, ModelConfig, SettingsConfig, Mode, InteractionModes }
 };
-use super::config::Config as ProfileConfig;
+use crate::config::user::profile::ProfileConfig;
 
 pub fn validate() -> Result<bool, Box<dyn Error>> {
     if ProfileConfig::config_exists() {

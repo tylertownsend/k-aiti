@@ -11,8 +11,8 @@ use tui::{
     Terminal, layout::Rect, style::{Style, Modifier},
 };
 
+use crate::config::user::profile::{ CreatedConfig, CreatedAccount };
 use super::{
-    config::{ CreatedConfig, CreatedAccount},
     environment_variables::EnvironmentVariableHandler,
     profile::{draw_intro, draw_profile_setup_complete_screen, draw_profile_confirmation_screen}, 
     api_account::{draw_account_found, draw_has_account_screen, draw_create_openai_account_screen, create_account, draw_enter_openai_account_screen, draw_disclaimer_screen},

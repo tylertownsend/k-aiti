@@ -1,4 +1,3 @@
-mod config;
 mod profile_setup_menu;
 mod environment_variables;
 mod api_account;
